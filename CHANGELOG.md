@@ -1,6 +1,14 @@
 # CHANGELOG
 
 
+## v0.1.3 (2024-11-13)
+
+### Performance Improvements
+
+- Replace keypoint with SIFT, increase default cost to 30, and example defaults more realistic
+  ([`ed4eb5f`](https://github.com/mbari-org/biotrack/commit/ed4eb5f200ee87349321704c259be9262464a951))
+
+
 ## v0.1.2 (2024-11-13)
 
 
