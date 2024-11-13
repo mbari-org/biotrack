@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "biotrack"
-version = "0.1.1"
+version = "0.1.2"
 description = "Tracker based on BioClip and CoTracker3 developed by MBARI"
 authors = ["danellecline <dcline@mbari.org>"]
 license = "Apache"
