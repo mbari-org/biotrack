@@ -1,0 +1,15 @@
+[
+    {
+        "image_path": "22.jpg",
+        "crop_path": "04bc219b-c3ab-578a-9d3a-378a8a7d9a51.jpg",
+        "image_width": 1920,
+        "image_height": 1080,
+        "x": 0.4958321571350098,
+        "y": 0.41406428019205727,
+        "xx": 0.504338550567627,
+        "xy": 0.44863052368164064,
+        "confidence": 0.2969337999820709,
+        "track_id": -1,
+        "class_name": "Gonatus"
+    }
+]

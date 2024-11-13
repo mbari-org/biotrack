@@ -1,0 +1,15 @@
+[
+    {
+        "image_path": "58.jpg",
+        "crop_path": "fcb5ed50-c95f-580f-8a01-d6e2692ce992.jpg",
+        "image_width": 1920,
+        "image_height": 1080,
+        "x": 0.34359190464019773,
+        "y": 0.39694730970594616,
+        "xx": 0.46210994720458987,
+        "xy": 0.6625360276963975,
+        "confidence": 0.9029698967933655,
+        "track_id": -1,
+        "class_name": "Galiteuthis phyllura"
+    }
+]

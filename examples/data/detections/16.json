@@ -1,0 +1,15 @@
+[
+    {
+        "image_path": "16.jpg",
+        "crop_path": "5e4c4a83-0c73-568f-9bef-52c02a866e25.jpg",
+        "image_width": 1920,
+        "image_height": 1080,
+        "x": 0.41716485023498534,
+        "y": 0.4242680019802517,
+        "xx": 0.42656664848327636,
+        "xy": 0.45543085734049477,
+        "confidence": 0.36808881163597107,
+        "track_id": -1,
+        "class_name": "Amphipoda"
+    }
+]

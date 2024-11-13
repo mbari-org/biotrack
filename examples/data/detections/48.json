@@ -1,0 +1,15 @@
+[
+    {
+        "image_path": "48.jpg",
+        "crop_path": "4305194a-58b0-5ad9-b27b-9d07c60453a9.jpg",
+        "image_width": 1920,
+        "image_height": 1080,
+        "x": 0.25748796463012696,
+        "y": 0.25620443556043837,
+        "xx": 0.2893531799316406,
+        "xy": 0.4372981177435981,
+        "confidence": 0.7091726064682007,
+        "track_id": -1,
+        "class_name": "Pseudosagitta maxima"
+    }
+]

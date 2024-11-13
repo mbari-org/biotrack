@@ -1,0 +1,50 @@
+name: New Release
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+jobs:
+  semantic_release:
+    runs-on: ubuntu-latest
+    concurrency: semantic_release
+    permissions:
+      id-token: write
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.11'
+
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "${HOME}/.local/bin" >> $GITHUB_PATH
+
+      - name: Install dependencies
+        run: poetry install
+
+      - name: Set PYTHONPATH to subdirectory sdcat
+        run: echo "PYTHONPATH=." >> $GITHUB_ENV
+      - name: Check release status
+        id: release-status
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          pip install python-semantic-release
+          ##########################################################################
+          # Add a --noop flag to check without releasing if adding pypi to next steps
+          ##########################################################################
+          if semantic-release --strict version 
+          then
+            echo "Releasing new version."
+          else
+            echo "Skipping release steps."
+          fi
