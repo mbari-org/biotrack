@@ -134,7 +134,12 @@ class BioTracker:
             sift = cv2.SIFT_create()
             keypoints, descriptors = sift.detectAndCompute(gray_crop, None)
             keypoints = sorted(keypoints, key=lambda kp: kp.response, reverse=True)
-            x, y = keypoints[0].pt
+            if len(keypoints) == 0:
+                # Choose the center of the crop if no keypoints are found
+                x = image.shape[1] // 2
+                y = image.shape[0] // 2
+            else:
+                x, y = keypoints[0].pt
 
             # Extract originating bounding box from EXIF UserComment tag
             # This is the box the crop was extracted from in the raw image
