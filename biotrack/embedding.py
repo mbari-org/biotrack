@@ -24,9 +24,6 @@ class ViTWrapper:
 
         # Load the model and processor
         if "cuda" in device and torch.cuda.is_available():
-            device_num = int(device.split(":")[-1])
-            info(f"Using GPU device {device_num}")
-            torch.cuda.set_device(device_num)
             self.device = "cuda"
             self.model.to("cuda")
         else:
@@ -59,6 +56,10 @@ def compute_embedding_vits(vit_wrapper: ViTWrapper, images: List[str], text: Lis
             inputs = [vit_wrapper.process(image) for image in images]
             image_input = torch.tensor(np.stack(inputs))
             text_tokens = vit_wrapper.tokenizer.tokenize(["This is " + t for t in text])
+
+            # Move the inputs to the device
+            image_input = image_input.to(vit_wrapper.device)
+            text_tokens = text_tokens.to(vit_wrapper.device)
 
             with torch.no_grad():
                 image_features = vit_wrapper.model.encode_image(image_input).float()

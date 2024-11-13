@@ -54,7 +54,7 @@ class BioTracker:
         info(f"Updating tracks with {len(points)} points in frames batch starting at {frame_num}")
 
         labels = kwargs.get("labels", [])
-        max_cost = kwargs.get("max_cost", 50)
+        max_cost = kwargs.get("max_cost", 20)
         t_pts = np.zeros((len(self.open_trackers), 2))
         t_emb = np.zeros((len(self.open_trackers), ViTWrapper.VECTOR_DIMENSIONS))
         d_emb = embeddings
@@ -113,11 +113,11 @@ class BioTracker:
                 self.closed_trackers.append(t)
                 self.open_trackers.pop(i)
 
-    def update_batch(self, frame_range: Tuple[int, int], frames: List[np.array], detections: Dict, **kwargs):
+    def update_batch(self, frame_range: Tuple[int, int], frames: np.ndarray, detections: Dict, **kwargs):
         """
         Update the tracker with new frames and detections
         :param frame_range: a tuple of the starting and ending frame numbers
-        :param frames:  a list of frames in the format [frame1, frame2, frame3...]
+        :param frames: numpy array of frames in the format [frame1, frame2, frame3...]
         :param detections: dictionary of detections in the format {["x": x, "y": y, "crop_path": crop_path, "frame": frame]}
         :param kwargs:
         :return:
@@ -130,7 +130,17 @@ class BioTracker:
 
             image = cv2.imread(d["crop_path"])
             gray_crop = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-            (min_val, max_val, min_loc, max_loc) = cv2.minMaxLoc(gray_crop)
+            params = cv2.SimpleBlobDetector_Params()
+            params.filterByArea = True
+            params.minArea = 50
+            detector = cv2.SimpleBlobDetector_create(params)
+            keypoints = detector.detect(image)
+            if keypoints:
+                largest_blob = max(keypoints, key=lambda k: k.size)
+                x, y = largest_blob.pt  # (x, y)
+            else:
+                (min_val, max_val, min_loc, max_loc) = cv2.minMaxLoc(gray_crop)
+                x, y = max_loc
 
             # Extract originating bounding box from EXIF UserComment tag
             # This is the box the crop was extracted from in the raw image
@@ -148,7 +158,6 @@ class BioTracker:
             if bbox is None:
                 raise ValueError(f"No bounding box found in {d['crop_path']}")
 
-            x, y = max_loc
             # Actual size of the crop which is rescaled to 224x224 - this is used to find
             # the top left x, y in the original image for the query
             scale = (bbox[2] - bbox[0]) / 224
@@ -172,11 +181,11 @@ class BioTracker:
 
         return self._update_batch(frame_range, frames, det_query, crop_query, **kwargs)
 
-    def _update_batch(self, frame_range: Tuple[int, int], frames: List[np.array], detections: Dict, crop_paths: Dict, **kwargs):
+    def _update_batch(self, frame_range: Tuple[int, int], frames: np.ndarray, detections: Dict, crop_paths: Dict, **kwargs):
         """
         Update the tracker with the new frames, detections and crops of the detections
         :param frame_range: a tuple of the starting and ending frame numbers
-        :param frames: a list of frames in the format [frame1, frame2, frame3...]
+        :param frames: numpy array of frames in the format [frame1, frame2, frame3...]
         :param detections: a dictionary of detections in the format {frame_num: [[x1,y1,label],[x2,y2,label],[[x1,y1,label]]...]}
         :param crop_paths: a dictionary of crop paths in the format {frame_num: [crop_path1, crop_path2, crop_path3...]}
         :param kwargs:
@@ -216,16 +225,7 @@ class BioTracker:
         video_chunk = frames.unsqueeze(0)  # Shape: (B, T, C, H, W)
         info(f"Running co-tracker model with {len(queries)} queries frames {frame_range}")
         pred_pts, pred_visibilities = self.offline_model(video_chunk, queries=queries_t[None], backward_tracking=True)
-        pred_pts, pred_visibilities = pred_pts.numpy(), pred_visibilities.numpy()
-
-        # Update with the queries - these seed new tracks and update existing tracks
-        for f in range(frame_range[0], frame_range[1]):
-            if f not in detections:
-                continue
-            labels_in_frame = [d[2] for d in detections[f]]
-            queries_in_frame = [d[:2] for d in detections[f]]
-            debug(f"Updating with queries {queries_in_frame} in frame {f}")
-            self.update_trackers(f, queries_in_frame, q_emb[f], labels=labels_in_frame, **kwargs)
+        pred_pts, pred_visibilities = pred_pts.cpu().numpy(), pred_visibilities.cpu().numpy()
 
         # Update with predictions
         for f in range(frame_range[0], frame_range[1], 1):
@@ -242,6 +242,15 @@ class BioTracker:
             # Create empty embeddings for the predicted detections since this is just pt tracking
             empty_emb = np.zeros((len(filtered_pts), ViTWrapper.VECTOR_DIMENSIONS))
             self.update_trackers(f, filtered_pts, empty_emb, **kwargs)
+
+        # Update with the queries - these seed new tracks and update existing tracks
+        for f in range(frame_range[0], frame_range[1]):
+            if f not in detections:
+                continue
+            labels_in_frame = [d[2] for d in detections[f]]
+            queries_in_frame = [d[:2] for d in detections[f]]
+            debug(f"Updating with queries {queries_in_frame} in frame {f}")
+            self.update_trackers(f, queries_in_frame, q_emb[f], labels=labels_in_frame, **kwargs)
 
         return self.open_trackers + self.closed_trackers
 

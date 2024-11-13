@@ -40,11 +40,11 @@ class Track:
         if frame_num not in self.pt.keys():
             return None, None
         pt = self.pt[frame_num]
-        label = self.label[frame_num]
+        best_label = max(set(self.label.values()), key=list(self.label.values()).count)
         if rescale:
             pt[0] *= self.x_scale
             pt[1] *= self.y_scale
-        return pt, label
+        return pt, best_label
 
     def predict(self) -> np.array:
         return self.pt[self.last_updated_frame]
@@ -58,10 +58,10 @@ class Track:
         if frame_num == self.last_updated_frame:
             info(f"Updating tracker {self.id} at frame {frame_num} with point {pt}")
             self.pt[frame_num] = pt
-            self.label[frame_num] = label
             # If there is a valid embedding, update it
             if len(emb) > 0:
                 self.emb = emb
+                self.label[frame_num] = label
             return
 
         # If adding in a new last_updated_frame, add the point
