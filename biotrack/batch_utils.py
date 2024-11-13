@@ -47,10 +47,7 @@ def media_to_stack(media_path: Path, frame_count=None, resize=None):
             frames.append(np.array(im))
 
     num_frames = len(frames)
-    video_chunk = np.stack(frames)
-    # frames = torch.tensor(frames, dtype=torch.float32).permute(0, 3, 1, 2) #/ 255.0
-    # video_chunk = frames.unsqueeze(0) # Shape: (B, T, C, H, W)
-    # video_chunk = video_chunk
+    video_chunk = np.array(frames)
 
     return video_chunk, num_frames
 
