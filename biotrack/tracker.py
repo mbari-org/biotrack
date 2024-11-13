@@ -54,7 +54,7 @@ class BioTracker:
         info(f"Updating tracks with {len(points)} points in frames batch starting at {frame_num}")
 
         labels = kwargs.get("labels", [])
-        max_cost = kwargs.get("max_cost", 20)
+        max_cost = kwargs.get("max_cost", 30)
         t_pts = np.zeros((len(self.open_trackers), 2))
         t_emb = np.zeros((len(self.open_trackers), ViTWrapper.VECTOR_DIMENSIONS))
         d_emb = embeddings
@@ -130,17 +130,11 @@ class BioTracker:
 
             image = cv2.imread(d["crop_path"])
             gray_crop = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-            params = cv2.SimpleBlobDetector_Params()
-            params.filterByArea = True
-            params.minArea = 50
-            detector = cv2.SimpleBlobDetector_create(params)
-            keypoints = detector.detect(image)
-            if keypoints:
-                largest_blob = max(keypoints, key=lambda k: k.size)
-                x, y = largest_blob.pt  # (x, y)
-            else:
-                (min_val, max_val, min_loc, max_loc) = cv2.minMaxLoc(gray_crop)
-                x, y = max_loc
+            # Choose the best keypoint to track based on SIFT
+            sift = cv2.SIFT_create()
+            keypoints, descriptors = sift.detectAndCompute(gray_crop, None)
+            keypoints = sorted(keypoints, key=lambda kp: kp.response, reverse=True)
+            x, y = keypoints[0].pt
 
             # Extract originating bounding box from EXIF UserComment tag
             # This is the box the crop was extracted from in the raw image
@@ -171,7 +165,7 @@ class BioTracker:
             frame_num = d["frame"]
             label = d["class_name"]
 
-            # Add the brightest spot to the query
+            # Add the best keypoint to the query
             info(f"Adding query for {x}, {y} {label} in frame {frame_num}")
             if frame_num not in det_query:
                 det_query[frame_num] = []

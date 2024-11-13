@@ -15,17 +15,19 @@ if __name__ == "__main__":
 
     # Load the video and convert it to a stack of frames
     frame_stack, num_frames = media_to_stack(media_path, frame_count=60, resize=(640, 360))
+    frame_stack_full, _ = media_to_stack(media_path, frame_count=60)
     out_video = cv2.VideoWriter(out_video_path, fourcc, 1, (1920, 1080))
 
     # Initialize the tracker
     tracker = BioTracker(1920, 1080)
-    window_len = 8
+    window_len = 30  #Max number of frames to track at once; this is the window length
 
     tracks = None
 
     # Run the tracker for all the frames in windows of window_len
     for i in range(0, num_frames, window_len):
         frames = frame_stack[i : i + window_len]
+        frame_full = frame_stack_full[i : i + window_len]
 
         # Get all the detections in the window
         detections = []
@@ -58,14 +60,15 @@ if __name__ == "__main__":
         # Display the tracks for the window
         for j in range(len(frames)):
             frame_num = i + j
+            frame = frame_full[j]
+            # Convert the frame to BGR
+            frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
             print(f"Displaying last_updated_frame {frame_num}")
-            image = parent_dir / "data" / "images" / f"{frame_num}.jpg"
-            frame = cv2.imread(image.as_posix())
             for track in tracks:
-                pt, label = track.get_point_label(frame_num)
+                pt, label = track.get_point_label(frame_num,rescale=True)
                 if pt is not None:
                     print(f"Drawing point {pt},{label}")
-                    center = (int(pt[0]), int(pt[1]))
+                    center = (int(pt[0]) + 10, int(pt[1]))
                     radius = 10
                     color = (255, 255, 255)
                     thickness = 1
