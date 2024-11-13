@@ -26,7 +26,7 @@ def media_to_stack(media_path: Path, frame_count=None, resize=None):
             print(f"No valid files found in {media_path}")
             return None, 0
 
-        for f in valid_files:
+        for f in sorted(valid_files):
             print(f"Processing {f}")
             im = cv2.imread(str(f))
             if resize:
