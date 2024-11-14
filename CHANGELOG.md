@@ -1,7 +1,20 @@
 # CHANGELOG
 
 
+## v0.1.4 (2024-11-13)
+
+### Bug Fixes
+
+- Handle empty keypoints
+  ([`a0e1aff`](https://github.com/mbari-org/biotrack/commit/a0e1aff948c6b8eb2710e720dd9dfaaac7449190))
+
+
 ## v0.1.3 (2024-11-13)
+
+### Documentation
+
+- Added missing gif
+  ([`0973610`](https://github.com/mbari-org/biotrack/commit/0973610ddf8bcacf11c91a0b8c90dea2c2bfcda7))
 
 ### Performance Improvements
 
