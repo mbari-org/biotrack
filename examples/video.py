@@ -51,6 +51,7 @@ if __name__ == "__main__":
                 loc["xy"] = loc["xy"] * loc["image_height"]
                 loc["crop_path"] = (crops_path / loc["crop_path"]).as_posix()
                 loc["frame"] = frame_num
+                loc["score"] = loc["confidence"]
                 detections.append(loc)
 
         i_e = min(i + window_len - 1, num_frames - 1)  # handle the end of the video
@@ -65,7 +66,7 @@ if __name__ == "__main__":
             frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
             print(f"Displaying last_updated_frame {frame_num}")
             for track in tracks:
-                pt, label = track.get_point_label(frame_num,rescale=True)
+                pt, label, box = track.get(frame_num, rescale=True)
                 if pt is not None:
                     print(f"Drawing point {pt},{label}")
                     center = (int(pt[0]) + 10, int(pt[1]))
@@ -77,6 +78,10 @@ if __name__ == "__main__":
                     font = cv2.FONT_HERSHEY_SIMPLEX
                     fontScale = 1
                     frame = cv2.putText(frame, f"{track.id}:{label}", center, font, fontScale, color, thickness, cv2.LINE_AA)
+
+                if box is not None:
+                    # Draw the box
+                    frame = cv2.rectangle(frame, (int(box[0]), int(box[1])), (int(box[2]), int(box[3])), (0, 255, 0), 1)
 
             if frame is not None:
                 cv2.imshow("Frame", frame)

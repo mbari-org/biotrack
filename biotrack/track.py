@@ -6,14 +6,17 @@ import numpy as np
 
 
 class Track:
-    def __init__(self, label: str, pt: np.array, emb: np.array, frame: int, x_scale: float, y_scale: float, max_empty_frame: int = 5, max_frames: int = 60, id: int = 0):
-        info(f"Creating tracker {id} at frame {frame} with point {pt} and emb {emb.shape}. Max empty frame {max_empty_frame} Max frames {max_frames}")
+    def __init__(self, label: str, pt: np.array, emb: np.array, frame: int, x_scale: float, y_scale: float, box: np.array = None, score: float = 0., max_empty_frame: int = 5, max_frames: int = 60, id: int = 0):
+        info(f"Creating tracker {id} at frame {frame} with point {pt} score {score} and emb {emb.shape}. Max empty frame {max_empty_frame} Max frames {max_frames}")
         self.max_empty_frame = max_empty_frame
         self.max_frames = max_frames
         self.id = id
         self.pt = {frame: pt}
         self.label = {frame: label}
+        self.score = {frame: score}
+        self.box = {frame: box}
         self.emb = emb
+        self.best_label = label
         self.start_frame = frame
         self.last_updated_frame = frame
         self.x_scale = x_scale
@@ -36,23 +39,39 @@ class Track:
     def last_update_frame(self):
         return self.last_updated_frame
 
-    def get_point_label(self, frame_num: int, rescale=True) -> (np.array, str):
+    def get(self, frame_num: int, rescale=True) -> (np.array, str, np.array):
         if frame_num not in self.pt.keys():
-            return None, None
+            return None, None, None
         pt = self.pt[frame_num]
-        best_label = max(set(self.label.values()), key=list(self.label.values()).count)
+        # If there is a box in the frame, return it
+        if self.box[frame_num] is not None:
+            box = self.box[frame_num]
+        else:
+            box = []
         if rescale:
             pt[0] *= self.x_scale
             pt[1] *= self.y_scale
-        return pt, best_label
+            if len(box) > 0:
+                box[0] *= self.x_scale
+                box[1] *= self.y_scale
+                box[2] *= self.x_scale
+                box[3] *= self.y_scale
+        return pt, self.best_label, box
 
     def predict(self) -> np.array:
         return self.pt[self.last_updated_frame]
 
-    def update(self, label: str, pt: np.array, emb: np.array, frame_num: int) -> None:
+    def update(self, label: str, pt: np.array, emb: np.array, frame_num: int, box:np.array = None) -> None:
         if self.is_closed(frame_num):
             debug(f"Tracker {self.id} has a gap from {self.last_updated_frame} to {frame_num} or more than max_frames {self.max_frames}")
             return
+
+        # Update the best_label
+        self.best_label = max(set(self.label.values()), key=list(self.label.values()).count)
+        # If the best_label is unknown, return one with the max score
+        if self.best_label == "Unknown":
+            max_score = max(self.score.values())
+            self.best_label = [label for label, score in self.score.items() if score == max_score][0]
 
         # If updating the same last_updated_frame, replace the point
         if frame_num == self.last_updated_frame:
@@ -62,11 +81,13 @@ class Track:
             if len(emb) > 0:
                 self.emb = emb
                 self.label[frame_num] = label
+                self.box[frame_num] = box
             return
 
         # If adding in a new last_updated_frame, add the point
         self.pt[frame_num] = pt
         self.label[frame_num] = label
+        self.box[frame_num] = box
         if len(emb) > 0:
             self.emb = emb
         self.last_updated_frame = frame_num

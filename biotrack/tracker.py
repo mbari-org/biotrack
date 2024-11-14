@@ -54,6 +54,8 @@ class BioTracker:
         info(f"Updating tracks with {len(points)} points in frames batch starting at {frame_num}")
 
         labels = kwargs.get("labels", [])
+        scores = kwargs.get("scores", [0. for _ in range(len(points))])
+        boxes = kwargs.get("boxes", [])
         max_cost = kwargs.get("max_cost", 30)
         t_pts = np.zeros((len(self.open_trackers), 2))
         t_emb = np.zeros((len(self.open_trackers), ViTWrapper.VECTOR_DIMENSIONS))
@@ -83,7 +85,7 @@ class BioTracker:
         # Associate the new detections with the existing tracks
         costs = associate(detection_pts=points, detection_emb=d_emb, tracker_pts=t_pts, tracker_emb=t_emb)
 
-        for cost, point, emb, label in zip(costs, points, d_emb, labels):
+        for cost, point, emb, label, score, box in zip(costs, points, d_emb, labels, scores, boxes):
             match = np.argmin(cost, axis=0)
             # Denormalize the detections
             point[0] = point[0] * self.model_width
@@ -95,13 +97,13 @@ class BioTracker:
                     if len(open_tracks) > 0 and match < len(open_tracks):
                         info(f"Found match {match} with cost {best_cost} for point {point}")
                         info(f"Found match to track id {open_tracks[match].track_id} cost {best_cost} for point {point}")
-                        open_tracks[match].update(label, point, emb, frame_num)
+                        open_tracks[match].update(label, point, emb, frame_num, box=box)
                 else:
                     info(f"Match too high {best_cost} > {max_cost}; creating new track {self.next_track_id} for point {point}")
-                    self.open_trackers.append(Track(label, point, emb, frame_num, self.x_scale, self.y_scale, id=self.next_track_id))
+                    self.open_trackers.append(Track(label, point, emb, frame_num, self.x_scale, self.y_scale, box=box, id=self.next_track_id, score=score))
                     self.next_track_id += 1
             else:
-                self.open_trackers.append(Track(label, point, emb, frame_num, self.x_scale, self.y_scale, id=self.next_track_id))
+                self.open_trackers.append(Track(label, point, emb, frame_num, self.x_scale, self.y_scale, box=box, id=self.next_track_id, score=score))
                 self.next_track_id += 1
 
         # Close any tracks ready to close
@@ -118,7 +120,7 @@ class BioTracker:
         Update the tracker with new frames and detections
         :param frame_range: a tuple of the starting and ending frame numbers
         :param frames: numpy array of frames in the format [frame1, frame2, frame3...]
-        :param detections: dictionary of detections in the format {["x": x, "y": y, "crop_path": crop_path, "frame": frame]}
+        :param detections: dictionary of detections in the format {["x": x, "y": y, "xx": x, "xy": xy, "crop_path": crop_path, "frame": frame, "class_name": class_name, "score": score]}
         :param kwargs:
         :return:
         """
@@ -169,13 +171,16 @@ class BioTracker:
             y /= self.y_scale
             frame_num = d["frame"]
             label = d["class_name"]
+            score = d["score"]
+            # Adjust the bbox to the model scale
+            bbox = [bbox[0] / self.x_scale, bbox[1] / self.y_scale, bbox[2] / self.x_scale, bbox[3] / self.y_scale]
 
             # Add the best keypoint to the query
             info(f"Adding query for {x}, {y} {label} in frame {frame_num}")
             if frame_num not in det_query:
                 det_query[frame_num] = []
                 crop_query[frame_num] = []
-            det_query[frame_num].append([x, y, label])
+            det_query[frame_num].append([x, y, label, score, bbox])
             crop_query[frame_num].append(d["crop_path"])
 
         return self._update_batch(frame_range, frames, det_query, crop_query, **kwargs)
@@ -185,7 +190,7 @@ class BioTracker:
         Update the tracker with the new frames, detections and crops of the detections
         :param frame_range: a tuple of the starting and ending frame numbers
         :param frames: numpy array of frames in the format [frame1, frame2, frame3...]
-        :param detections: a dictionary of detections in the format {frame_num: [[x1,y1,label],[x2,y2,label],[[x1,y1,label]]...]}
+        :param detections: a dictionary of detections in the format {frame_num: [[x1,y1,label,score,bbox],[x2,y2,label,score,bbox],[[x1,y1,label,score,bbox]]...]}
         :param crop_paths: a dictionary of crop paths in the format {frame_num: [crop_path1, crop_path2, crop_path3...]}
         :param kwargs:
         :return:
@@ -247,9 +252,11 @@ class BioTracker:
             if f not in detections:
                 continue
             labels_in_frame = [d[2] for d in detections[f]]
+            scores_in_frame = [d[3] for d in detections[f]]
+            boxes_in_frame = [d[4] for d in detections[f]]
             queries_in_frame = [d[:2] for d in detections[f]]
             debug(f"Updating with queries {queries_in_frame} in frame {f}")
-            self.update_trackers(f, queries_in_frame, q_emb[f], labels=labels_in_frame, **kwargs)
+            self.update_trackers(f, queries_in_frame, q_emb[f], labels=labels_in_frame, scores=scores_in_frame, boxes=boxes_in_frame,**kwargs)
 
         return self.open_trackers + self.closed_trackers
 
