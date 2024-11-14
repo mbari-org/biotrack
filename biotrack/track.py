@@ -39,7 +39,17 @@ class Track:
     def last_update_frame(self):
         return self.last_updated_frame
 
-    def get_best(self) -> (int, np.array, str, np.array, float):
+    def rescale(self, pt: np.array, box: np.array) -> (np.array, np.array):
+        pt[0] *= self.x_scale
+        pt[1] *= self.y_scale
+        if len(box) > 0:
+            box[0] *= self.x_scale
+            box[1] *= self.y_scale
+            box[2] *= self.x_scale
+            box[3] *= self.y_scale
+        return pt, box
+
+    def get_best(self, rescale=True) -> (int, np.array, str, np.array, float):
         # Get the best box which is a few frames behind the last_updated_frame
         # This is pretty arbitrary, but sometimes the last box is too blurry or not visible
         num_frames = len(self.pt.keys())
@@ -52,6 +62,8 @@ class Track:
             box = self.box[frame_num]
             pt = self.pt[frame_num]
         max_score = max(self.score.values())
+        if rescale:
+            pt, box = self.rescale(pt, box)
         return frame_num, pt, self.best_label, box, max_score
 
     def get(self, frame_num: int, rescale=True) -> (np.array, str, np.array, float):
@@ -64,13 +76,7 @@ class Track:
         else:
             box = []
         if rescale:
-            pt[0] *= self.x_scale
-            pt[1] *= self.y_scale
-            if len(box) > 0:
-                box[0] *= self.x_scale
-                box[1] *= self.y_scale
-                box[2] *= self.x_scale
-                box[3] *= self.y_scale
+            pt, box = self.rescale(pt, box)
         if frame_num in self.score.keys():
             score = self.score[frame_num]
         else:
