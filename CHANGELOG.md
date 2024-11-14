@@ -1,12 +1,20 @@
 # CHANGELOG
 
 
+## v0.2.0 (2024-11-14)
+
+
 ## v0.1.4 (2024-11-13)
 
 ### Bug Fixes
 
 - Handle empty keypoints
   ([`a0e1aff`](https://github.com/mbari-org/biotrack/commit/a0e1aff948c6b8eb2710e720dd9dfaaac7449190))
+
+### Features
+
+- Added support for bounding box and online update of label
+  ([`bbd2351`](https://github.com/mbari-org/biotrack/commit/bbd235174a176fce0e8647d9e2440efbca443c91))
 
 
 ## v0.1.3 (2024-11-13)
