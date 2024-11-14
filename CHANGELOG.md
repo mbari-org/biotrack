@@ -1,7 +1,15 @@
 # CHANGELOG
 
 
+## v0.2.1 (2024-11-14)
+
+
 ## v0.2.0 (2024-11-14)
+
+### Performance Improvements
+
+- Purge tracks, update with score and handle ending of video in example
+  ([`c2a57ea`](https://github.com/mbari-org/biotrack/commit/c2a57ea02a3f8fb85f190dc146c1f8f3d7a9041c))
 
 
 ## v0.1.4 (2024-11-13)
