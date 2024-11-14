@@ -66,7 +66,7 @@ if __name__ == "__main__":
             frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
             print(f"Displaying last_updated_frame {frame_num}")
             for track in tracks:
-                pt, label, box = track.get(frame_num, rescale=True)
+                pt, label, box, score = track.get(frame_num, rescale=True)
                 if pt is not None:
                     print(f"Drawing point {pt},{label}")
                     center = (int(pt[0]) + 10, int(pt[1]))
@@ -77,7 +77,7 @@ if __name__ == "__main__":
                     # Draw the track id with the label, e.g. 1:Unknown
                     font = cv2.FONT_HERSHEY_SIMPLEX
                     fontScale = 1
-                    frame = cv2.putText(frame, f"{track.id}:{label}", center, font, fontScale, color, thickness, cv2.LINE_AA)
+                    frame = cv2.putText(frame, f"{track.id}:{label}{score:.2f}", center, font, fontScale, color, thickness, cv2.LINE_AA)
 
                 if box is not None:
                     # Draw the box
@@ -94,8 +94,8 @@ if __name__ == "__main__":
         if len(closed_tracks) > 0:
             for track in closed_tracks:
                 print(f"Closed track {track.id} at frame {i_e}")
-                best_frame, best_pt, best_label, best_box = track.get_best()
-                print(f"Best track {track.id} is {best_pt},{best_box},{best_label} in frame {best_frame}")
+                best_frame, best_pt, best_label, best_box, best_score = track.get_best()
+                print(f"Best track {track.id} is {best_pt},{best_box},{best_label},{best_score} in frame {best_frame}")
             tracker.purge_closed_tracks(i_e)
 
     out_video.release()
@@ -104,5 +104,5 @@ if __name__ == "__main__":
     if len(tracks) > 0:
         for track in tracks:
             print(f"Track {track.id} at frame {i_e}")
-            best_frame, best_pt, best_label, best_box = track.get_best()
+            best_frame, best_pt, best_label, best_box, best_score = track.get_best()
             print(f"Best track {track.id} is {best_pt},{best_box},{best_label} in frame {best_frame}")
