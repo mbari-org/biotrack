@@ -54,7 +54,7 @@ if __name__ == "__main__":
                 loc["score"] = loc["confidence"]
                 detections.append(loc)
 
-        i_e = min(i + window_len - 1, num_frames - 1)  # handle the end of the video
+        i_e = min(i + window_len - 1, num_frames)  # handle the end of the video
         print(f"Tracking frames {i} to {i_e}")
         tracks = tracker.update_batch((i, i_e), frames, detections=detections)
 
@@ -87,3 +87,22 @@ if __name__ == "__main__":
                 cv2.imshow("Frame", frame)
                 cv2.waitKey(250)
                 out_video.write(frame)
+
+        # Print basic info on closed tracks, and purge them. Purging is not necessary for the tracker to work,
+        # but it is good practice for memory management
+        closed_tracks = [track for track in tracks if track.is_closed(i_e)]
+        if len(closed_tracks) > 0:
+            for track in closed_tracks:
+                print(f"Closed track {track.id} at frame {i_e}")
+                best_frame, best_pt, best_label, best_box = track.get_best()
+                print(f"Best track {track.id} is {best_pt},{best_box},{best_label} in frame {best_frame}")
+            tracker.purge_closed_tracks(i_e)
+
+    out_video.release()
+    # Print out any remaining open tracks
+    tracks = tracker.get_tracks()
+    if len(tracks) > 0:
+        for track in tracks:
+            print(f"Track {track.id} at frame {i_e}")
+            best_frame, best_pt, best_label, best_box = track.get_best()
+            print(f"Best track {track.id} is {best_pt},{best_box},{best_label} in frame {best_frame}")

@@ -97,7 +97,7 @@ class BioTracker:
                     if len(open_tracks) > 0 and match < len(open_tracks):
                         info(f"Found match {match} with cost {best_cost} for point {point}")
                         info(f"Found match to track id {open_tracks[match].track_id} cost {best_cost} for point {point}")
-                        open_tracks[match].update(label, point, emb, frame_num, box=box)
+                        open_tracks[match].update(label, point, emb, frame_num, box=box, score=score)
                 else:
                     info(f"Match too high {best_cost} > {max_cost}; creating new track {self.next_track_id} for point {point}")
                     self.open_trackers.append(Track(label, point, emb, frame_num, self.x_scale, self.y_scale, box=box, id=self.next_track_id, score=score))
@@ -260,3 +260,24 @@ class BioTracker:
 
         return self.open_trackers + self.closed_trackers
 
+    def purge_closed_tracks(self, frame_num: int):
+        """
+        Purge the closed tracks that are no longer needed
+        :param frame_num: the current frame number
+        :return:
+        """
+        # Close any tracks ready to close
+        i = len(self.closed_trackers)
+        for t in reversed(self.closed_trackers):
+            i -= 1
+            if t.is_closed(frame_num):
+                info(f"Removing closed track {t.track_id}")
+                self.closed_trackers.pop(i)
+
+
+    def get_tracks(self):
+        """
+        Get the open and closed tracks
+        :return: a list of open and closed tracks
+        """
+        return self.open_trackers + self.closed_trackers
