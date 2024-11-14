@@ -1,7 +1,15 @@
 # CHANGELOG
 
 
+## v0.3.0 (2024-11-14)
+
+
 ## v0.2.1 (2024-11-14)
+
+### Features
+
+- Return scores with other data for video overlay or output
+  ([`379e719`](https://github.com/mbari-org/biotrack/commit/379e71901cfdd6a7f30f7314bd83c2fe05538262))
 
 
 ## v0.2.0 (2024-11-14)
