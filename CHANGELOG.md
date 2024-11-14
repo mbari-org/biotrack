@@ -1,7 +1,15 @@
 # CHANGELOG
 
 
+## v0.4.0 (2024-11-14)
+
+
 ## v0.3.0 (2024-11-14)
+
+### Features
+
+- Rescale best
+  ([`af64b0a`](https://github.com/mbari-org/biotrack/commit/af64b0a00553de180f322855ffc7b84b8e8908e8))
 
 
 ## v0.2.1 (2024-11-14)
