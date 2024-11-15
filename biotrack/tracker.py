@@ -97,15 +97,6 @@ class BioTracker:
                 self.open_trackers.append(Track(label, point, emb, frame_num, self.image_width, self.image_height, box=box, id=self.next_track_id, score=score))
                 self.next_track_id += 1
 
-        # Close any tracks ready to close
-        i = len(self.open_trackers)
-        for t in reversed(self.open_trackers):
-            i -= 1
-            if t.is_closed(frame_num):
-                info(f"Closing track {t.track_id}")
-                self.closed_trackers.append(t)
-                self.open_trackers.pop(i)
-
     def update_batch(self, frame_range: Tuple[int, int], frames: np.ndarray, detections: Dict, **kwargs):
         """
         Update the tracker with new frames and det_query
@@ -254,6 +245,15 @@ class BioTracker:
             queries_in_frame = [d[:2] for d in det_query[f]]
             debug(f"Updating with queries {queries_in_frame} in frame {f}")
             self.update_trackers(f, queries_in_frame, q_emb[f], labels=labels_in_frame, scores=scores_in_frame, boxes=boxes_in_frame,**kwargs)
+
+            # Close any tracks ready to close
+            i = len(self.open_trackers)
+            for t in reversed(self.open_trackers):
+                i -= 1
+                if t.is_closed(f):
+                    info(f"Closing track {t.track_id}")
+                    self.closed_trackers.append(t)
+                    self.open_trackers.pop(i)
 
         return self.open_trackers + self.closed_trackers
 
