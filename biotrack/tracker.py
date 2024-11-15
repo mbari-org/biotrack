@@ -91,10 +91,10 @@ class BioTracker:
                         open_tracks[match].update(label, point, emb, frame_num, box=box, score=score)
                 else:
                     info(f"Match too high {best_cost} > {max_cost}; creating new track {self.next_track_id} for point {point}")
-                    self.open_trackers.append(Track(label, point, emb, frame_num, self.image_width, self.image_height, box=box, id=self.next_track_id, score=score))
+                    self.open_trackers.append(Track(self.next_track_id, label, point, emb, frame_num, self.image_width, self.image_height, box=box, score=score, **kwargs))
                     self.next_track_id += 1
             else:
-                self.open_trackers.append(Track(label, point, emb, frame_num, self.image_width, self.image_height, box=box, id=self.next_track_id, score=score))
+                self.open_trackers.append(Track(self.next_track_id, label, point, emb, frame_num, self.image_width, self.image_height, box=box, score=score, **kwargs))
                 self.next_track_id += 1
 
     def update_batch(self, frame_range: Tuple[int, int], frames: np.ndarray, detections: Dict, **kwargs):

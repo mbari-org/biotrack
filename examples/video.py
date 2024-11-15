@@ -51,7 +51,7 @@ if __name__ == "__main__":
 
         i_e = min(i + window_len - 1, num_frames)  # handle the end of the video
         print(f"Tracking frames {i} to {i_e}")
-        tracks = tracker.update_batch((i, i_e), frames, detections=detections)
+        tracks = tracker.update_batch((i, i_e), frames, detections=detections, max_frames=60, max_empty_frames=5)
 
         # Display the tracks for the window
         for j in range(len(frames)):
@@ -69,7 +69,7 @@ if __name__ == "__main__":
                     color = (255, 255, 255)
                     thickness = 1
                     frame = cv2.circle(frame, center, radius, color, thickness)
-                    # Draw the track id with the label, e.g. 1:Unknown
+                    # Draw the track track_id with the label, e.g. 1:Unknown
                     font = cv2.FONT_HERSHEY_SIMPLEX
                     fontScale = 1
                     frame = cv2.putText(frame, f"{track.id}:{label}{score:.2f}", center, font, fontScale, color, thickness, cv2.LINE_AA)

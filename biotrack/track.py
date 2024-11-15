@@ -6,11 +6,13 @@ import numpy as np
 
 
 class Track:
-    def __init__(self, label: str, pt: np.array, emb: np.array, frame: int, x_scale: float, y_scale: float, box: np.array = None, score: float = 0., max_empty_frame: int = 30, max_frames: int = 300, id: int = 0):
-        info(f"Creating tracker {id} at frame {frame} with point {pt} score {score} and emb {emb.shape}. Max empty frame {max_empty_frame} Max frames {max_frames}")
-        self.max_empty_frame = max_empty_frame
+    def __init__(self, track_id: int, label: str, pt: np.array, emb: np.array, frame: int, x_scale: float, y_scale: float, box: np.array = None, score: float = 0., **kwargs):
+        max_empty_frames = kwargs.get("max_empty_frames", 30)
+        max_frames = kwargs.get("max_frames", 300)
+        info(f"Creating tracker {track_id} at {frame}:{pt},{score}. Max empty frame {max_empty_frames} Max frames {max_frames}")
+        self.max_empty_frames = max_empty_frames
         self.max_frames = max_frames
-        self.id = id
+        self.id = track_id
         self.pt = {frame: pt}
         self.label = {frame: label}
         self.score = {frame: score}
@@ -31,8 +33,8 @@ class Track:
         return self.emb
 
     def is_closed(self, frame_num: int) -> bool:
-        is_closed = (frame_num - self.last_updated_frame + 1) >= self.max_empty_frame or len(self.pt) >= self.max_frames
-        info(f"Tracker {self.id} is_closed {is_closed} frame_num {frame_num} last_updated_frame {self.last_updated_frame} max_empty_frame {self.max_empty_frame} max_frames {self.max_frames}")
+        is_closed = (frame_num - self.last_updated_frame + 1) >= self.max_empty_frames or len(self.pt) >= self.max_frames
+        info(f"Tracker {self.id} is_closed {is_closed} frame_num {frame_num} last_updated_frame {self.last_updated_frame} max_empty_frame {self.max_empty_frames} max_frames {self.max_frames}")
         return is_closed
 
     @property
