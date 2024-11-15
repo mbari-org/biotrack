@@ -1,6 +1,14 @@
 # CHANGELOG
 
 
+## v0.5.0 (2024-11-15)
+
+### Features
+
+- Add pass through of max_frames and max_empty_frames for track
+  ([`321335d`](https://github.com/mbari-org/biotrack/commit/321335d3bb12562344b3b41890b4d7f848fc739a))
+
+
 ## v0.4.1 (2024-11-15)
 
 ### Documentation
