@@ -7,7 +7,7 @@ from scipy.spatial.distance import cdist
 
 from biotrack.logger import debug
 
-def associate(detection_pts, detection_emb, tracker_pts, tracker_emb, alpha: float = 0.8) -> np.ndarray:
+def associate(detection_pts, detection_emb, tracker_pts, tracker_emb, alpha: float = 0.5) -> np.ndarray:
     if len(detection_pts) == 0 or len(tracker_pts) == 0:
         return [100.0 * np.ones(len(detection_pts), dtype=float)]
 

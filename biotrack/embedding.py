@@ -15,7 +15,7 @@ from biotrack.logger import info, err
 class ViTWrapper:
     MODEL_NAME = "ViT-B-16"
     PRETRAINED = "openai"
-    VECTOR_DIMENSIONS = 1024  # 512 for image, 512 for text
+    VECTOR_DIMENSIONS = 512  # 512 for image, 512 for text
 
     def __init__(self, device: str = "cpu", batch_size: int = 8):
         self.batch_size = batch_size
@@ -63,10 +63,11 @@ def compute_embedding_vits(vit_wrapper: ViTWrapper, images: List[str], text: Lis
 
             with torch.no_grad():
                 image_features = vit_wrapper.model.encode_image(image_input).float()
-                text_features = vit_wrapper.model.encode_text(text_tokens).float()
+                # text_features = vit_wrapper.model.encode_text(text_tokens).float()
 
             # Concatenate the image and text features
-            batch_embeddings = torch.cat([image_features, text_features], dim=1).cpu().numpy()
+            # batch_embeddings = torch.cat([image_features, text_features], dim=1).cpu().numpy()
+            batch_embeddings = image_features.cpu().numpy()
 
             # Save the embeddings
             for emb, filename in zip(batch_embeddings, batch):
