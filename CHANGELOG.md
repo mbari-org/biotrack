@@ -1,6 +1,27 @@
 # CHANGELOG
 
 
+## v0.4.1 (2024-11-15)
+
+### Documentation
+
+- Updated gif with latest
+  ([`c6a9c33`](https://github.com/mbari-org/biotrack/commit/c6a9c3305dd57c4d57c80f0fa50eba4c164bf749))
+
+### Performance Improvements
+
+- Change alpha weight to 0.5 and disable text embedding until have time to fully test
+  ([`f8f4a61`](https://github.com/mbari-org/biotrack/commit/f8f4a616c8a39f93c25bd20a2dc6c088097dc29f))
+
+### Refactoring
+
+- Move track clean to single point
+  ([`e0cc692`](https://github.com/mbari-org/biotrack/commit/e0cc69273e180fef3bc87b539691783078ba1661))
+
+- Change to mostly normalized coordinates, except where needed
+  ([`02bc124`](https://github.com/mbari-org/biotrack/commit/02bc12441cfa77ad5752ed2f45756437d3e5bdad))
+
+
 ## v0.4.0 (2024-11-14)
 
 
