@@ -29,14 +29,14 @@ if __name__ == "__main__":
         frames = frame_stack[i : i + window_len]
         frame_full = frame_stack_full[i : i + window_len]
 
-        # Get all the detections in the window
+        # Get all the detections in the window to pass to the tracker - these are called the queries
         detections = []
         for j in range(len(frames)):
             frame_num = i + j
-            # Load the detections for the last_updated_frame
+            # Load the det_query for the last_updated_frame
             detections_file = detections_path / f"{frame_num}.json"
             if not detections_file.exists():
-                print(f"No detections for frame {frame_num}")
+                print(f"No det_query for frame {frame_num}")
                 continue
 
             data = json.loads(detections_file.read_text())
@@ -44,11 +44,6 @@ if __name__ == "__main__":
                 if j >= num_frames:
                     continue
 
-                # Convert the x, y to the image coordinates and adjust crop path to the full path
-                loc["x"] = loc["x"] * loc["image_width"]
-                loc["y"] = loc["y"] * loc["image_height"]
-                loc["xx"] = loc["xx"] * loc["image_width"]
-                loc["xy"] = loc["xy"] * loc["image_height"]
                 loc["crop_path"] = (crops_path / loc["crop_path"]).as_posix()
                 loc["frame"] = frame_num
                 loc["score"] = loc["confidence"]

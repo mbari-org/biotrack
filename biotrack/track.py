@@ -40,14 +40,18 @@ class Track:
         return self.last_updated_frame
 
     def rescale(self, pt: np.array, box: np.array) -> (np.array, np.array):
-        pt[0] *= self.x_scale
-        pt[1] *= self.y_scale
-        if len(box) > 0:
-            box[0] *= self.x_scale
-            box[1] *= self.y_scale
-            box[2] *= self.x_scale
-            box[3] *= self.y_scale
-        return pt, box
+        pt_rescale = pt.copy()
+        pt_rescale[0] = pt[0] * self.x_scale
+        pt_rescale[1] = pt[1] * self.y_scale
+        if box is not None:
+            box_rescale = box.copy()
+            box_rescale[0] = box[0] * self.x_scale
+            box_rescale[1] = box[1] * self.y_scale
+            box_rescale[2] = box[2] * self.x_scale
+            box_rescale[3] = box[3] * self.y_scale
+        else:
+            box_rescale = box
+        return pt_rescale, box_rescale
 
     def get_best(self, rescale=True) -> (int, np.array, str, np.array, float):
         # Get the best box which is a few frames behind the last_updated_frame
