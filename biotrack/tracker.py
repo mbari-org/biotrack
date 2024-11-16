@@ -237,7 +237,7 @@ class BioTracker:
 
         # Update with the queries - these seed new tracks and update existing tracks
         for f in range(frame_range[0], frame_range[1]):
-            if f not in det_query:
+            if f not in det_query.keys():
                 continue
             labels_in_frame = [d[2] for d in det_query[f]]
             scores_in_frame = [d[3] for d in det_query[f]]
