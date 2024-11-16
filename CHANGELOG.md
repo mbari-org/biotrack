@@ -1,6 +1,19 @@
 # CHANGELOG
 
 
+## v0.5.1 (2024-11-16)
+
+### Bug Fixes
+
+- Correct filter of query points
+  ([`751daa2`](https://github.com/mbari-org/biotrack/commit/751daa22889c806fca680d189f9fa2542370a773))
+
+### Performance Improvements
+
+- Omit zero value score from best label and move best frame to -3
+  ([`5e75293`](https://github.com/mbari-org/biotrack/commit/5e7529360767917b70bd63f2102a64bd8cc0e298))
+
+
 ## v0.5.0 (2024-11-15)
 
 ### Features
