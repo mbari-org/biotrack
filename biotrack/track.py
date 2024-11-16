@@ -59,8 +59,8 @@ class Track:
         # Get the best box which is a few frames behind the last_updated_frame
         # This is pretty arbitrary, but sometimes the last box is too blurry or not visible
         num_frames = len(self.pt.keys())
-        if num_frames > 2:
-            frame_num = list(self.pt.keys())[-2]
+        if num_frames > 3:
+            frame_num = list(self.pt.keys())[-3]
             box = self.box[frame_num]
             pt = self.pt[frame_num]
         else: # Handle the case where there is only one frame tracked
@@ -119,12 +119,17 @@ class Track:
         self.last_updated_frame = frame_num
 
         # Update the best_label with that of the highest scoring label
-        max_score = max(self.score.values())
-        for key, value in self.score.items():
-            if value == max_score:
-                max_frame = key
-                break
-        self.best_label = self.label[max_frame]
+        # Only choose scores that are greater than 0
+        valid_scores = {k: v for k, v in self.score.items() if v > 0}
+        if len(valid_scores) == 0:
+            self.best_label = "marine organism"
+        else:
+            max_score = max(valid_scores.values())
+            for key, value in valid_scores.items():
+                if value == max_score:
+                    max_frame = key
+                    break
+            self.best_label = self.label[max_frame]
 
         pts_pretty = [f"{pt[0]:.2f},{pt[1]:.2f},{label}" for pt, label in zip(self.pt.values(), self.label.values())]
         best_label = max(set(self.label.values()), key=list(self.label.values()).count)
