@@ -1,6 +1,14 @@
 # CHANGELOG
 
 
+## v0.5.2 (2024-11-16)
+
+### Performance Improvements
+
+- Majority vote for best label and average score
+  ([`4f3d5f3`](https://github.com/mbari-org/biotrack/commit/4f3d5f325176eec7404d5638d31df0b9860512e5))
+
+
 ## v0.5.1 (2024-11-16)
 
 ### Bug Fixes
