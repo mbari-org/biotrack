@@ -1,6 +1,15 @@
 # CHANGELOG
 
 
+## v0.5.4 (2024-11-22)
+
+### Performance Improvements
+
+- Reduce the impact of the early detections by only considering the last 10 frames and update
+  highest scoring label
+  ([`ab14fce`](https://github.com/mbari-org/biotrack/commit/ab14fce8e6bd7ebf2082854c977f62e5e7c75944))
+
+
 ## v0.5.3 (2024-11-22)
 
 ### Performance Improvements
