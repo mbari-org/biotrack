@@ -50,7 +50,7 @@ class CustomLogger(Singleton):
         self.log_filename = output_path / f"{output_prefix}_{now:%Y%m%d}.log"
         handler = logging.FileHandler(self.log_filename, mode="w")
         handler.setFormatter(formatter)
-        handler.setLevel(logging.INFO)
+        handler.setLevel(logging.DEBUG)
         self.logger.addHandler(handler)
 
         # also log to console

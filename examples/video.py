@@ -85,7 +85,7 @@ if __name__ == "__main__":
 
         # Print basic info on closed tracks, and purge them. Purging is not necessary for the tracker to work,
         # but it is good practice for memory management
-        closed_tracks = [track for track in tracks if track.is_closed(i_e)]
+        closed_tracks = [track for track in tracks if track.is_closed()]
         if len(closed_tracks) > 0:
             for track in closed_tracks:
                 print(f"Closed track {track.id} at frame {i_e}")

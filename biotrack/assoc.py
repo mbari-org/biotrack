@@ -22,8 +22,10 @@ def associate(detection_pts, detection_emb, tracker_pts, tracker_emb, alpha: flo
     # Calculate Euclidean distance and Cosine distance
     D_E = np.round(100 * cdist(detection_pts, tracker_pts, metric="euclidean"))
     D_C = cdist(detection_emb, tracker_emb, metric="cosine")
-    np.nan_to_num(D_C, copy=False, nan=0.0)
-    D_C = np.round(100 * D_C)
-    D_combined = alpha * D_E + (1 - alpha) * D_C
+    if np.isnan(D_C).any():
+        D_combined = D_E
+    else:
+        D_C = np.round(100 * D_C)
+        D_combined = alpha * D_E + (1 - alpha) * D_C
     debug(f"D_E: {D_E}  - D_C: {D_C} D_combined: {D_combined}")
     return D_combined

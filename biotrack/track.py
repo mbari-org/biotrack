@@ -1,10 +1,24 @@
 # biotrack, Apache-2.0 license
-# Filename: biotrack/tracker/track.py
+# Filename: biotrack/track.py
 # Description:  Basic track object to contain and update tracks
 from collections import Counter
 
 from biotrack.logger import info, debug
 import numpy as np
+
+
+def max_score_p(model_predictions, model_scores):
+    """Find the top prediction"""
+    max_score = 0.0
+
+    for row in zip(model_predictions, model_scores):
+        prediction, score = row
+        score = float(score)
+        if score > max_score:
+            max_score = score
+            best_pred = prediction
+
+    return best_pred, max_score
 
 
 class Track:
@@ -24,6 +38,7 @@ class Track:
         self.best_score = score
         self.start_frame = frame
         self.last_updated_frame = frame
+        self.closed = False
         self.x_scale = x_scale
         self.y_scale = y_scale
 
@@ -35,10 +50,27 @@ class Track:
     def embedding(self):
         return self.emb
 
-    def is_closed(self, frame_num: int) -> bool:
-        is_closed = (frame_num - self.last_updated_frame + 1) >= self.max_empty_frames or len(self.pt) >= self.max_frames
-        info(f"Tracker {self.id} is_closed {is_closed} frame_num {frame_num} last_updated_frame {self.last_updated_frame} max_empty_frame {self.max_empty_frames} max_frames {self.max_frames}")
-        return is_closed
+    def is_closed(self) -> bool:
+        return self.closed
+
+    def close(self, frame_num: int) -> bool:
+        # If the acceleration is very low, then the object being tracked is likely to be stationary
+        # allow the track to remain open for a longer period of time if it is
+        pts = np.array([pt for pt in self.pt.values()])
+        frames = np.array([int(frame) for frame in self.pt.keys()])
+        acceleration_mag = 100.
+        if len(pts) > 2:
+            delta_pos = np.diff(pts, axis=0)
+            delta_time = np.diff(frames)
+            velocity = delta_pos / delta_time[:, np.newaxis]
+            acceleration = np.diff(velocity, axis=0) / delta_time[1:, np.newaxis]
+            acceleration_mag = np.linalg.norm(acceleration[-1]) # Get the last acceleration
+            info(f"Tracker {self.id} acceleration {np.round(acceleration_mag*1000)}")
+        is_closed = ((frame_num - self.last_updated_frame + 1) >= self.max_empty_frames or
+                     len(self.pt) >= self.max_frames and acceleration_mag < 3.)
+        info(f"Tracker {self.id} is_closed {is_closed} frame_num {frame_num} last_updated_frame {self.last_updated_frame} "
+             f"max_empty_frame {self.max_empty_frames} max_frames {self.max_frames}")
+        self.closed = is_closed
 
     @property
     def last_update_frame(self):
@@ -94,32 +126,7 @@ class Track:
     def predict(self) -> np.array:
         return self.pt[self.last_updated_frame]
 
-    def update(self, label: str, pt: np.array, emb: np.array, frame_num: int, box:np.array = None, score:float = None) -> None:
-        if self.is_closed(frame_num):
-            debug(f"Tracker {self.id} has a gap from {self.last_updated_frame} to {frame_num} or more than max_frames {self.max_frames}")
-            return
-
-        # If updating the same last_updated_frame, replace the point
-        if frame_num == self.last_updated_frame:
-            info(f"Updating tracker {self.id} at frame {frame_num} with point {pt}")
-            self.pt[frame_num] = pt
-            self.label[frame_num] = label
-            self.box[frame_num] = box
-            self.score[frame_num] = score
-            # If there is a valid embedding, update it
-            if len(emb) > 0:
-                self.emb = emb
-            return
-
-        # If adding in a new last_updated_frame, add the point
-        self.pt[frame_num] = pt
-        self.label[frame_num] = label
-        self.box[frame_num] = box
-        self.score[frame_num] = score
-        if len(emb) > 0:
-            self.emb = emb
-        self.last_updated_frame = frame_num
-
+    def _update_best(self) -> None:
         # Update the best_label with that which occurs the most that has a score > 0. This is a simple majority vote
         data = [(pred, score) for pred, score in zip(self.label.values(), self.score.values()) if float(score) > 0.]
 
@@ -138,9 +145,9 @@ class Track:
             # If there are no majority predictions
             if len(majority_predictions) == 0:
                 # Pick the prediction with the highest score
-                # best_pred, max_score = max_score_p(model_predictions, model_scores)
-                self.best_label = "marine organism"
-                self.best_score = 0.0
+                self.best_pred, self.max_score = max_score_p(model_predictions, model_scores)
+                # self.best_label = "marine organism"
+                # self.best_score = 0.0
             else:
                 self.best_label = majority_predictions[0]
                 best_score = 0.0
@@ -155,6 +162,37 @@ class Track:
             self.best_label = "marine organism"
             self.best_score = 0.0
 
+    def update(self, label: str, pt: np.array, emb: np.array, frame_num: int, box:np.array = None, score:float = None) -> None:
+        if self.is_closed():
+            debug(f"Tracker {self.id} has a gap from {self.last_updated_frame} to {frame_num} or more than max_frames {self.max_frames}")
+            return
+
+        if frame_num > self.last_updated_frame:
+            self.last_updated_frame = frame_num
+
+        # If updating the same last_updated_frame, replace the point
+        if frame_num == self.last_updated_frame:
+            info(f"Updating tracker {self.id} at frame {frame_num} with point {pt}")
+            self.pt[frame_num] = pt
+            self.label[frame_num] = label
+            self.box[frame_num] = box
+            self.score[frame_num] = score
+            # If there is a valid embedding, update it
+            if len(emb) > 0:
+                self.emb = emb
+            self._update_best()
+            self.close(frame_num)
+            return
+
+        # If adding in a new last_updated_frame, add the point
+        self.pt[frame_num] = pt
+        self.label[frame_num] = label
+        self.box[frame_num] = box
+        self.score[frame_num] = score
+        if len(emb) > 0:
+            self.emb = emb
+        self._update_best()
+        self.close(frame_num)
         pts_pretty = [f"{pt[0]:.2f},{pt[1]:.2f},{label},{score}" for pt, label, score in zip(self.pt.values(), self.label.values(), self.score.values())]
         total_frames = len(self.pt)
         info(f"Updating tracker {self.id} total_frames {total_frames} updated start {self.start_frame} to {self.last_updated_frame} {pts_pretty} with label {self.best_label}, score {self.best_score}")

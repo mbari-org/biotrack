@@ -65,7 +65,7 @@ class BioTracker:
         if len(points) == 0:
             return
 
-        open_tracks = [t for t in self.open_trackers if not t.is_closed(frame_num)]
+        open_tracks = [t for t in self.open_trackers if not t.is_closed()]
         info(f"Updating {len(open_tracks)} open tracks")
 
         # Get predicted det_query and embeddings from existing trackers
@@ -77,6 +77,7 @@ class BioTracker:
         d_emb = np.array(d_emb)
 
         # Associate the new det_query with the existing tracks
+        debug(f"Associating {len(points)} points with {len(open_tracks)} trackers")
         costs = associate(detection_pts=points, detection_emb=d_emb, tracker_pts=t_pts, tracker_emb=t_emb)
 
         for cost, point, emb, label, score, box in zip(costs, points, d_emb, labels, scores, boxes):
@@ -86,16 +87,25 @@ class BioTracker:
                 info(f"Match {match} all costs {cost} for point {point} num trackers {len(open_tracks)}")
                 if cost[match] < max_cost:
                     if len(open_tracks) > 0 and match < len(open_tracks):
-                        info(f"Found match {match} with cost {best_cost} for point {point}")
-                        info(f"Found match to track id {open_tracks[match].track_id} cost {best_cost} for point {point}")
+                        info(f"Found match to track id {open_tracks[match].track_id} cost {best_cost} for point {point} at {frame_num}")
                         open_tracks[match].update(label, point, emb, frame_num, box=box, score=score)
                 else:
-                    info(f"Match too high {best_cost} > {max_cost}; creating new track {self.next_track_id} for point {point}")
+                    info(f"Match too high {best_cost} > {max_cost}; creating new track {self.next_track_id} for point {point} at {frame_num}")
                     self.open_trackers.append(Track(self.next_track_id, label, point, emb, frame_num, self.image_width, self.image_height, box=box, score=score, **kwargs))
                     self.next_track_id += 1
             else:
+                info(f"Creating new track {self.next_track_id} or point {point} at {frame_num}")
                 self.open_trackers.append(Track(self.next_track_id, label, point, emb, frame_num, self.image_width, self.image_height, box=box, score=score, **kwargs))
                 self.next_track_id += 1
+
+        # Close any tracks ready to close
+        i = len(self.open_trackers)
+        for t in reversed(self.open_trackers):
+            i -= 1
+            if t.is_closed():
+                info(f"Closing track {t.track_id}")
+                self.closed_trackers.append(t)
+                self.open_trackers.pop(i)
 
     def update_batch(self, frame_range: Tuple[int, int], frames: np.ndarray, detections: Dict, **kwargs):
         """
@@ -199,6 +209,17 @@ class BioTracker:
         if len(queries) == 0:
             return []
 
+        # Update with the queries - these seed new tracks and update existing tracks
+        for f in range(frame_range[0], frame_range[1]):
+            if f not in det_query.keys():
+                continue
+            labels_in_frame = [d[2] for d in det_query[f]]
+            scores_in_frame = [d[3] for d in det_query[f]]
+            boxes_in_frame = [d[4] for d in det_query[f]]
+            queries_in_frame = [d[:2] for d in det_query[f]]
+            debug(f"Updating with queries {queries_in_frame} in frame {f}")
+            self.update_trackers(f, queries_in_frame, q_emb[f], labels=labels_in_frame, scores=scores_in_frame, boxes=boxes_in_frame,**kwargs)
+
         # Put the queries and frames into tensors and run the model with the backward tracking option which is
         # more accurate than the forward/online only tracking
         # Convert the queries to the model scale
@@ -222,38 +243,22 @@ class BioTracker:
         # Update with predictions
         for f in range(frame_range[0], frame_range[1], 1):
             if len(pred_pts) == 0:
+                debug(f"No predictions for frame {f}")
                 continue
             pts = pred_pts[:, f - frame_range[0], :, :]
             if len(pts) == 0:
+                debug(f"No predictions for frame {f}")
                 continue
 
             # Filter out the det_query that are not visible
             pred_visibilities_in_frame = pred_visibilities[:, f - frame_range[0], :]
+            debug(f"Found {len(pred_visibilities_in_frame[0])} predictions that are visible in {f}")
             filtered_pts = pts[pred_visibilities_in_frame]
+            debug(f"{len(filtered_pts)} predictions are visible in {f}")
 
             # Create empty embeddings for the predicted det_query since this is just pt tracking
             empty_emb = np.zeros((len(filtered_pts), ViTWrapper.VECTOR_DIMENSIONS))
             self.update_trackers(f, filtered_pts, empty_emb, **kwargs)
-
-        # Update with the queries - these seed new tracks and update existing tracks
-        for f in range(frame_range[0], frame_range[1]):
-            if f not in det_query.keys():
-                continue
-            labels_in_frame = [d[2] for d in det_query[f]]
-            scores_in_frame = [d[3] for d in det_query[f]]
-            boxes_in_frame = [d[4] for d in det_query[f]]
-            queries_in_frame = [d[:2] for d in det_query[f]]
-            debug(f"Updating with queries {queries_in_frame} in frame {f}")
-            self.update_trackers(f, queries_in_frame, q_emb[f], labels=labels_in_frame, scores=scores_in_frame, boxes=boxes_in_frame,**kwargs)
-
-            # Close any tracks ready to close
-            i = len(self.open_trackers)
-            for t in reversed(self.open_trackers):
-                i -= 1
-                if t.is_closed(f):
-                    info(f"Closing track {t.track_id}")
-                    self.closed_trackers.append(t)
-                    self.open_trackers.pop(i)
 
         return self.open_trackers + self.closed_trackers
 
@@ -267,7 +272,7 @@ class BioTracker:
         i = len(self.closed_trackers)
         for t in reversed(self.closed_trackers):
             i -= 1
-            if t.is_closed(frame_num):
+            if t.is_closed():
                 info(f"Removing closed track {t.track_id}")
                 self.closed_trackers.pop(i)
 
