@@ -1,6 +1,14 @@
 # CHANGELOG
 
 
+## v0.5.3 (2024-11-22)
+
+### Performance Improvements
+
+- Improved track closure and change debugging level
+  ([`be86070`](https://github.com/mbari-org/biotrack/commit/be860706c88866e8d0eefa367483d8730fdc7570))
+
+
 ## v0.5.2 (2024-11-16)
 
 ### Performance Improvements
