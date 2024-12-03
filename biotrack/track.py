@@ -1,4 +1,4 @@
-# biotrack, Apache-2.0 license
+# biotrack, CC-BY-NC license
 # Filename: biotrack/track.py
 # Description:  Basic track object to contain and update_pt_box tracks
 from collections import defaultdict

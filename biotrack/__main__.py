@@ -1,4 +1,4 @@
-# biotrack, Apache-2.0 license
+# biotrack, CC-BY-NC license
 # Filename: __main__.py
 # Description: Main entry point for the biotrack command line interface
 from datetime import datetime

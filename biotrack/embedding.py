@@ -1,5 +1,5 @@
-# biotrack, Apache-2.0 license
-# Filename: biotrack/tracker/embedding.py
+# biotrack, CC-BY-NC license
+# Filename: biotrack/embedding.py
 # Description:  Miscellaneous functions for computing VIT embeddings and caching them.
 from pathlib import Path
 

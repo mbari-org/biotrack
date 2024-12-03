@@ -1,7 +1,9 @@
 # Tracker based on CoTracker3 
 
-This is a tracker based on the CoTracker3 algorithm with some modifications to make it work with the Biodiversity lab video.
-This is work in progress.
+This is a tracker based on the CoTracker3 algorithm with some modifications for Biodiversity lab video.
+This is work in progress.  This uses two transformer-based models to track objects in a video; one model for appearance and 
+one for tracking points motion. The CoTracker3 model is run in an offline mode for best performance.
+
 
 # Installation
 
@@ -15,7 +17,7 @@ poetry install
 export PYTHONPATH=. && poetry run python examples/video.py
 ```
 
-Should see a window with the video and the tracked points, something simiar to this:
+Should see a window with the video and the tracked points, something similar to this:
 
 ![video](https://github.com/mbari-org/biotrack/blob/main/examples/data/video/V4318_20201208T203419Z_h264_tl_3_biotrack.gif)
 

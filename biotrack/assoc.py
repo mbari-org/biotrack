@@ -1,4 +1,4 @@
-# biotrack, Apache-2.0 license
+# biotrack, CC-BY-NC license
 # Filename: biotrack/tracker/assoc.py
 # Description:  Track association functions
 

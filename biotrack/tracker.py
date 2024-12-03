@@ -1,4 +1,4 @@
-# biotrack, Apache-2.0 license
+# biotrack, CC-BY-NC license
 # Filename: biotrack/tracker/tracker.py
 # Description:  Main tracker class for tracking objects with points, label and embeddings using the CoTracker model and BioClip ViT embeddings
 from dbm.dumb import error

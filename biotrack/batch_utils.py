@@ -1,3 +1,7 @@
+# biotrack, CC-BY-NC license
+# Filename: biotrack/batch_utils.py
+# Description:  Miscellaneous functions mostly for example purposes
+
 from pathlib import Path
 
 

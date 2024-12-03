@@ -1,4 +1,4 @@
-# biotrack, Apache-2.0 license
+# biotrack, CC-BY-NC license
 # Filename: biotrack/trace.py
 # Description:  Basic trace object to contain and update_pt_box traces
 from collections import defaultdict, Counter
