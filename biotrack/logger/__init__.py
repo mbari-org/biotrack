@@ -74,18 +74,9 @@ def create_logger_file(prefix: str = "biotrack"):
     if ENVIRONMENT and ENVIRONMENT.upper() == "TESTING":
         log_path = Path("logs")
     else:
-        log_path = Path.home() / "biotrack" / "logs"
-        # Check if can write to the log path, and if not revert to system temp
-        try:
-            log_path.mkdir(parents=True, exist_ok=True)
-            test_file = log_path / "test.txt"
-            test_file.touch()
-            test_file.unlink()
-        except PermissionError:
-            import tempfile
-
-            temp_dir = tempfile.gettempdir()
-            log_path = Path(temp_dir) / "biotrack" / "logs"
+        import tempfile
+        temp_dir = tempfile.gettempdir()
+        log_path = Path(temp_dir) / "biotrack" / "logs"
 
     # create the log directory if it doesn't exist
     log_path.mkdir(parents=True, exist_ok=True)

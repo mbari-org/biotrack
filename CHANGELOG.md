@@ -5,7 +5,7 @@
 
 ### Performance Improvements
 
-- Reduce the impact of the early detections by only considering the last 10 frames and update
+- Reduce the impact of the early detections by only considering the last 10 frames and update_pt_box
   highest scoring label
   ([`ab14fce`](https://github.com/mbari-org/biotrack/commit/ab14fce8e6bd7ebf2082854c977f62e5e7c75944))
 
@@ -91,7 +91,7 @@
 
 ### Performance Improvements
 
-- Purge tracks, update with score and handle ending of video in example
+- Purge tracks, update_pt_box with score and handle ending of video in example
   ([`c2a57ea`](https://github.com/mbari-org/biotrack/commit/c2a57ea02a3f8fb85f190dc146c1f8f3d7a9041c))
 
 
@@ -104,7 +104,7 @@
 
 ### Features
 
-- Added support for bounding box and online update of label
+- Added support for bounding box and online update_pt_box of label
   ([`bbd2351`](https://github.com/mbari-org/biotrack/commit/bbd235174a176fce0e8647d9e2440efbca443c91))
 
 

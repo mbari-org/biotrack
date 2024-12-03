@@ -1,81 +1,62 @@
 # biotrack, Apache-2.0 license
 # Filename: biotrack/tracker/embedding.py
 # Description:  Miscellaneous functions for computing VIT embeddings and caching them.
+from pathlib import Path
 
 from PIL import Image
 import numpy as np
 import torch
 from typing import List
-import open_clip
-from open_clip import tokenizer
 
 from biotrack.logger import info, err
 
+from transformers import AutoModelForImageClassification, AutoImageProcessor
+import torch.nn.functional as F
 
 class ViTWrapper:
-    MODEL_NAME = "ViT-B-16"
-    PRETRAINED = "openai"
-    VECTOR_DIMENSIONS = 512  # 512 for image, 512 for text
+    #DEFAULT_MODEL_NAME = "/Users/dcline/Dropbox/code/biotrack/models/i2MAP-vit-b-16"
+    DEFAULT_MODEL_NAME = "/mnt/DeepSea-AI/models/m3midwater-vit-b-16/"
+    # DEFAULT_MODEL_NAME = "/mnt/DeepSea-AI/models/m3midwater-vit-b-16/"
 
-    def __init__(self, device: str = "cpu", batch_size: int = 8):
+
+    def __init__(self, device: str = "cpu", batch_size: int = 32, model_name: str = DEFAULT_MODEL_NAME, device_id: int = 0):
         self.batch_size = batch_size
-        self.model, _, self.process = open_clip.create_model_and_transforms(self.MODEL_NAME, pretrained=self.PRETRAINED)
-        self.tokenizer = tokenizer
+        self.name = model_name
+        self.model = AutoModelForImageClassification.from_pretrained(model_name)
+        self.processor = AutoImageProcessor.from_pretrained(model_name)
 
-        # Load the model and processor
-        if "cuda" in device and torch.cuda.is_available():
-            self.device = "cuda"
-            self.model.to("cuda")
-        else:
-            self.device = "cpu"
+        if not Path(model_name).exists():
+            err(f"Model {model_name} does not exist")
+            raise FileNotFoundError(f"Model {model_name} does not exist")
+
+        self.device = torch.device(f"cuda:{device_id}" if torch.cuda.is_available() else "cpu")
+        self.model.to(self.device)
 
     @property
     def model_name(self) -> str:
-        return self.model.config._name_or_path
+        return self.name
 
+    @property
+    def vector_dimensions(self) -> int:
+        return self.model.config.hidden_size
 
-def compute_embedding_vits(vit_wrapper: ViTWrapper, images: List[str], text: List[str]):
-    """
-    Compute the embedding for the given images
-    :param vit_wrapper: Wrapper for the ViT model
-    :param images: List of image filenames
-    :param text:  List of text strings to embed
-    :param device: Device to use for the computation (cpu or cuda:0, cuda:1, etc.)
-    :return: List of embeddings in the same order as the input images
-    """
-    batch_size = 8
+    def process_images(self, image_paths: list):
+        info(f"Processing {len(image_paths)} images with {self.model_name}")
 
-    # Batch process the images
-    batches = [images[i : i + batch_size] for i in range(0, len(images), batch_size)]
+        images = [Image.open(image_path).convert("RGB") for image_path in image_paths]
+        inputs = self.processor(images=images, return_tensors="pt").to(self.device)
 
-    # Store the embeddings in a list
-    all_embeddings = []
-    for batch in batches:
-        try:
-            images = [Image.open(filename).convert("RGB") for filename in batch]
-            inputs = [vit_wrapper.process(image) for image in images]
-            image_input = torch.tensor(np.stack(inputs))
-            text_tokens = vit_wrapper.tokenizer.tokenize(["This is " + t for t in text])
+        with torch.no_grad():
+            outputs = self.model(**inputs)
+            logits = outputs.logits
+            embeddings = self.model.base_model(**inputs)
+            batch_embeddings = embeddings.last_hidden_state[:, 0, :].cpu().numpy()
 
-            # Move the inputs to the device
-            image_input = image_input.to(vit_wrapper.device)
-            text_tokens = text_tokens.to(vit_wrapper.device)
+        # Get the top 3 classes and scores
+        top_scores, top_classes = torch.topk(logits, 3)
+        top_classes = top_classes.cpu().numpy()
+        top_scores = F.softmax(top_scores, dim=-1).cpu().numpy()
+        predicted_classes = [[self.model.config.id2label[class_idx] for class_idx in class_list] for class_list in top_classes]
+        predicted_scores = [[score for score in score_list] for score_list in top_scores]
 
-            with torch.no_grad():
-                image_features = vit_wrapper.model.encode_image(image_input).float()
-                # text_features = vit_wrapper.model.encode_text(text_tokens).float()
-
-            # Concatenate the image and text features
-            # batch_embeddings = torch.cat([image_features, text_features], dim=1).cpu().numpy()
-            batch_embeddings = image_features.cpu().numpy()
-
-            # Save the embeddings
-            for emb, filename in zip(batch_embeddings, batch):
-                emb = emb.astype(np.float32)
-                all_embeddings.append(emb)
-        except Exception as e:
-            err(f"Error processing {batch}: {e}")
-            raise e
-
-    # Return the embeddings
-    return all_embeddings
+        return batch_embeddings, predicted_classes, predicted_scores
