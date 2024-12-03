@@ -1,4 +1,7 @@
-# Tracker based on BioClip and CoTracker3 
+# Tracker based on CoTracker3 
+
+This is a tracker based on the CoTracker3 algorithm with some modifications to make it work with the Biodiversity lab video.
+This is work in progress.
 
 # Installation
 
@@ -18,6 +21,5 @@ Should see a window with the video and the tracked points, something simiar to t
 
 
 # References
-
-- [BioClip](https://imageomics.github.io/bioclip/)
+ 
 - [CoTracker3](https://cotracker3.github.io/)
