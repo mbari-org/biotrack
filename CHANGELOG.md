@@ -1,6 +1,14 @@
 # CHANGELOG
 
 
+## v0.5.5 (2024-11-22)
+
+### Performance Improvements
+
+- Weighted score for best label/score
+  ([`4875e18`](https://github.com/mbari-org/biotrack/commit/4875e1848c8a380b1d2de68fb896f57019213003))
+
+
 ## v0.5.4 (2024-11-22)
 
 ### Performance Improvements
