@@ -1,6 +1,24 @@
 # CHANGELOG
 
 
+## v0.6.0 (2024-12-09)
+
+### Chores
+
+- Updated license to CC-BY-NC license
+  ([`e01bb2d`](https://github.com/mbari-org/biotrack/commit/e01bb2d51dad037f2bea249f71c46a7c7d8e0864))
+
+### Documentation
+
+- Updated readme
+  ([`fedc966`](https://github.com/mbari-org/biotrack/commit/fedc96664a7f379f78908a98308cc31be6ff2ed5))
+
+### Features
+
+- Improved tracking with gradcam coverage activation map and Hungarian cost assignment
+  ([`8cf6ed6`](https://github.com/mbari-org/biotrack/commit/8cf6ed6fd029cef9e26f953ac2fb438cb294ee41))
+
+
 ## v0.5.6 (2024-12-03)
 
 
