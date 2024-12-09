@@ -21,6 +21,9 @@ Should see a window with the video and the tracked points, something similar to 
 
 ![video](https://github.com/mbari-org/biotrack/blob/main/examples/data/video/V4318_20201208T203419Z_h264_tl_3_biotrack.gif)
 
+Video track of the tracked points in the video.
+
+![video](https://github.com/mbari-org/biotrack/blob/main/examples/data/video/traces0-59.gif)
 
 # References
  

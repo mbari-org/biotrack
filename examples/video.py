@@ -20,7 +20,7 @@ if __name__ == "__main__":
 
     # Initialize the tracker
     tracker = BioTracker(1920, 1080)
-    window_len = 30  #Max number of frames to track at once; this is the window length
+    window_len = 60  #Max number of frames to track at once; this is the window length
 
     tracks = None
 
@@ -51,7 +51,7 @@ if __name__ == "__main__":
 
         i_e = min(i + window_len - 1, num_frames)  # handle the end of the video
         print(f"Tracking frames {i} to {i_e}")
-        tracks = tracker.update_batch((i, i_e), frames, detections=detections, max_frames=60, max_empty_frames=5)
+        tracks = tracker.update_batch((i, i_e), frames, detections=detections, max_frames=60, max_empty_frames=3, max_cost=0.3)
 
         # Display the tracks for the window
         for j in range(len(frames)):
@@ -63,7 +63,7 @@ if __name__ == "__main__":
             for track in tracks:
                 pt, label, box, score = track.get(frame_num, rescale=True)
                 if pt is not None:
-                    print(f"Drawing point {pt},{label}")
+                    print(f"Drawing point {pt},{label} for track {track.id}")
                     center = (int(pt[0]) + 10, int(pt[1]))
                     radius = 10
                     color = (255, 255, 255)
@@ -91,7 +91,7 @@ if __name__ == "__main__":
                 print(f"Closed track {track.id} at frame {i_e}")
                 best_frame, best_pt, best_label, best_box, best_score = track.get_best()
                 print(f"Best track {track.id} is {best_pt},{best_box},{best_label},{best_score} in frame {best_frame}")
-            tracker.purge_closed_tracks(i_e)
+            tracker.purge_closed_tracks()
 
     out_video.release()
     # Print out any remaining open tracks

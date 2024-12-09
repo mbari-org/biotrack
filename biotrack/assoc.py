@@ -35,24 +35,17 @@ def associate(detection_pts, detection_emb, tracker_pts, tracker_emb, alpha: flo
     return D_combined
 
 
-def associate_track_pts_emb(detection_pts, detection_emb, tracker_pts, tracker_emb, w_similarity: float = 0.5,
+def associate_track_pts_emb(detection_pts, detection_emb, trace_pts, tracker_emb, w_similarity: float = 0.5,
                             w_keypoints=0.5) -> np.ndarray:
 
     try:
-        num_key_points = len(tracker_pts)
+        num_key_points = len(trace_pts)
         num_det_pts = len(detection_pts)
-
-        max_keypoint_distance = 1# np.max(tracker_pts)  # Use global max for normalization
-        tracker_pts /= max_keypoint_distance
-        detection_pts /= max_keypoint_distance
 
         similarity_matrix = cosine_similarity(tracker_emb, detection_emb)
         cost_similarity = 1 - similarity_matrix  # Convert similarity to cost
 
-        cost_keypoints = cdist(tracker_pts, detection_pts, metric="euclidean")
-
-        # Normalize keypoint distances to [0, 1] and compute cost with weights
-        cost_keypoints /= np.max(cost_keypoints)
+        cost_keypoints = cdist(trace_pts, detection_pts, metric="euclidean")
 
         combined_cost_matrix = w_similarity * cost_similarity + w_keypoints * cost_keypoints
 
@@ -68,9 +61,10 @@ def associate_track_pts_emb(detection_pts, detection_emb, tracker_pts, tracker_e
         row_ind, col_ind = linear_sum_assignment(combined_cost_matrix)
         assignments = [(row, col) for row, col in zip(row_ind, col_ind) if col < num_det_pts]
 
-        info("Assignments (track point -> det point):")
         for t_idx, d_idx in assignments:
-            info(f"Track point {t_idx} {tracker_pts[t_idx]}-> Detection point {d_idx} {detection_pts[d_idx]}with combined cost {combined_cost_matrix[t_idx, d_idx]:.2f}")
+            tracker_pts_pretty = ", ".join([f"{pt:.2f}" for pt in trace_pts[t_idx]])
+            detection_pts_pretty = ", ".join([f"{pt:.2f}" for pt in detection_pts[d_idx]])
+            info(f"Track point {t_idx} {tracker_pts_pretty}-> Detection point {d_idx} {detection_pts_pretty}with combined cost {combined_cost_matrix[t_idx, d_idx]:.2f}")
 
         return assignments, combined_cost_matrix
     except Exception as e:
@@ -78,27 +72,20 @@ def associate_track_pts_emb(detection_pts, detection_emb, tracker_pts, tracker_e
         return [], []
 
 
-def associate_trace_pts(detection_pts, trace_pts, w_keypoints=0.5) -> np.ndarray:
+def associate_trace_pts(detection_pts, trace_pts) -> np.ndarray:
 
     num_det_pts = len(detection_pts)
 
     try:
-        # Normalize keypoint coordinates for consistent scaling
-        max_keypoint_distance = 1.0#np.max(trace_pts)  # Use global max for normalization
-        trace_pts /= max_keypoint_distance
-        detection_pts /= max_keypoint_distance
-
         cost_keypoints = cdist(trace_pts, detection_pts, metric="euclidean")
-        # Normalize keypoint distances to [0, 1] and compute cost with weights
-        cost_keypoints /= np.max(cost_keypoints)
 
         # Compute optimal assignment using Hungarian algorithm
         row_ind, col_ind = linear_sum_assignment(cost_keypoints)
         assignments = [(row, col) for row, col in zip(row_ind, col_ind) if col < num_det_pts]
 
-        info("Assignments (track point -> det point):")
         for t_idx, d_idx in assignments:
-            info(f"Track point {t_idx} {trace_pts[t_idx]}-> Detection point {d_idx} {detection_pts[d_idx]} with combined cost {cost_keypoints[t_idx, d_idx]:.2f}")
+            detection_pts_pretty = ", ".join([f"{pt:.2f}" for pt in detection_pts[d_idx]])
+            info(f"Track point {t_idx} {trace_pts[t_idx]}-> Detection point {d_idx} {detection_pts_pretty} with combined cost {cost_keypoints[t_idx, d_idx]:.2f}")
 
         return assignments, cost_keypoints
     except Exception as e:

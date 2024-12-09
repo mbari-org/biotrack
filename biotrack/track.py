@@ -59,8 +59,12 @@ class Track:
             if trace.num_frames > longest_trace.num_frames:
                 longest_trace = trace
 
-        avg_acc = longest_trace.compute_acc()
+        avg_acc, _ = longest_trace.compute_acc_vel()
         last_updated_frame = longest_trace.last_update_frame
+
+        start_frame = self.traces[0].start_frame
+        if frame_num < start_frame:
+            return
 
         is_closed = ((frame_num - last_updated_frame + 1) >= self.max_empty_frames or
                      longest_trace.num_frames >= self.max_frames and avg_acc < 10. and avg_acc != -1)
@@ -141,7 +145,11 @@ class Track:
             if pt is not None:
                 pt = self.rescale_pt(pt)
 
-        # Get the longest trace
+        # If there is no point and no box, return None
+        if pt is None and box is None:
+            return None, None, None, 0.
+
+        # Get the best score/label from the longest trace
         longest_trace = self.traces[0]
         for trace in self.traces:
             if trace.num_frames > longest_trace.num_frames:
@@ -155,7 +163,11 @@ class Track:
         predictions = []
         for trace in self.traces:
             pt = trace.get_pt(-1)
+            _, vel = trace.compute_acc_vel()
             if pt is not None:
+                # Project the point to the next frame within the bounds of the image
+                pt[0] = max(0, min(1.0, pt[0] + vel[0]))
+                pt[1] = max(0, min(1.0, pt[1] + vel[1]))
                 predictions.append(pt)
         return np.array(predictions)
 

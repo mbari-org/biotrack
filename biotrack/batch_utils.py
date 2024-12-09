@@ -4,6 +4,8 @@
 
 from pathlib import Path
 
+import numpy as np
+
 
 def find_files(directory: Path, extensions: list):
     files = list(directory.rglob("*"))
@@ -64,3 +66,29 @@ if __name__ == "__main__":
     media_path = parent_dir / "V4318_20201208T203419Z_h264_tl_3.mp4"
 
     video, num_frames = media_to_stack(media_path, frame_count=3, resize=(640, 360))
+
+
+def percent_coverage(mask1, mask2):
+    """ Calculate percent coverage between two binary masks."""
+    if mask1.shape != mask2.shape:
+        raise ValueError("Mask dimensions must match")
+
+    # Ensure masks are binary
+    mask1 = mask1.astype(bool)
+    mask2 = mask2.astype(bool)
+
+    # Calculate overlap and union
+    overlap = np.logical_and(mask1, mask2).sum()
+    union = np.logical_or(mask1, mask2).sum()
+
+    # Handle the edge case of empty masks
+    if union == 0:
+        return 100.0 if overlap == 0 else 0.0
+
+    return np.round((overlap / union) * 100)
+
+
+def reshape_transform(tensor):
+    result = tensor[:, 1:, :].reshape(tensor.size(0), 14, 14, tensor.size(2))
+    result = result.permute(0, 3, 1, 2)  # Transpose to channels-first
+    return result

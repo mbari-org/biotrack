@@ -21,6 +21,13 @@ class Trace:
         self.winning_scores = [0., 0.]
 
     @property
+    def start_frame(self):
+        frames = list(self.pt)
+        if len(frames) > 0:
+            return frames[0]
+        return -1
+
+    @property
     def id(self):
         return self.trace_id
 
@@ -36,15 +43,21 @@ class Trace:
     def best_scores(self):
         return self.winning_scores
 
-    def get_box(self, frame_num: int):
+    def get_box(self, frame_num: int, rescale=False):
         if frame_num in self.box.keys():
+            if rescale:
+                return self.rescale(self.box[frame_num])
             return self.box[frame_num]
         return None
 
-    def get_pt(self, frame_num: int):
+    def get_pt(self, frame_num: int, rescale=False):
         if frame_num in self.pt.keys():
+            if rescale:
+                return self.rescale(self.pt[frame_num])
             return self.pt[frame_num]
         if frame_num == -1 and len(self.pt) > 0:
+            if rescale:
+                return self.rescale(list(self.pt.values())[-1])
             return list(self.pt.values())[-1]
         return None
 
@@ -54,7 +67,7 @@ class Trace:
     def is_closed(self) -> bool:
         return self.closed
 
-    def compute_acc(self) -> bool:
+    def compute_acc_vel(self) -> float:
         # If the acceleration is very low, then the object being tracked is likely to be stationary
         # allow the track to remain open for a longer period of time if it is
         pt = np.array([pt for pt in self.pt.values()])
@@ -66,15 +79,22 @@ class Trace:
             velocity = delta_pos / delta_time[:, np.newaxis]
             acceleration = np.diff(velocity, axis=0) / delta_time[1:, np.newaxis]
             acceleration_mag = np.linalg.norm(acceleration[-1])  # Get the last acceleration
-            info(f"{self.track_id}:{self.id} acceleration {np.round(acceleration_mag * 1000)}")
-            return acceleration_mag
-        return acceleration_mag
+            info(f"{self.track_id}:{self.id} acceleration {np.round(acceleration_mag * 1000)}, velocity {np.round(np.linalg.norm(velocity[-1]) * 1000)}")
+            return acceleration_mag, velocity[-1]
+        return acceleration_mag, np.array([0., 0.])
 
     @property
     def last_update_frame(self):
         frames = list(self.pt)
         if len(frames) > 0:
             return frames[-1]
+        return -1
+
+    @property
+    def start_frame(self):
+        frames = list(self.pt)
+        if len(frames) > 0:
+            return frames[0]
         return -1
 
     @property
@@ -87,42 +107,26 @@ class Trace:
     def dump(self):
         pts_pretty = [f"{pt[0]:.2f},{pt[1]:.2f},{label},{score}" for pt, label, score in
                       zip(self.pt.values(), self.label.values(), self.score.values())]
-        info(f"{self.track_id}:{self.trace_id} last_update_frame {self.last_update_frame} {pts_pretty}")
+        info(f"{self.track_id}:{self.trace_id} start_frame {self.start_frame} last_update_frame {self.last_update_frame} {pts_pretty}")
 
     def get_frames(self):
         return list(self.pt.keys())
-
-    def get(self, frame_num: int, rescale=True) -> (np.array, str, np.array, float):
-        if frame_num not in self.pt.keys():
-            return None, None, None, 0.
-        pt = self.pt[frame_num]
-        # If there is a box in the frame, return it
-        if self.box[frame_num] is not None:
-            box = self.box[frame_num]
-        else:
-            box = []
-        if rescale:
-            pt, box = self.rescale(pt, box)
-        if frame_num in self.score.keys():
-            score = self.score[frame_num]
-        else:
-            score = 0.
-        return pt, self.best_labels, box, score
 
     def predict(self) -> np.array:
         return list(self.pt.values())[-1]
 
     def update_pt(self, pt:np.array, frame_num: int):
-        if self.is_closed():
+        if self.is_closed() or frame_num < self.last_update_frame:
             return
 
         info(f"{self.track_id}:{self.id} updating frame {frame_num} with points {pt}. No score/label")
         self.pt[frame_num] = pt
+        self.score[frame_num] = 0.
+        self.label[frame_num] = "marine organism"
 
     def update_pt_box(self, label: str, pt: np.array, frame_num: int, box: np.array = None,
                       score: float = 0.) -> None:
-        if self.is_closed():
-            info(f"{self.track_id}:{self.id} is closed")
+        if self.is_closed() or frame_num < self.last_update_frame:
             return
 
         info(f"{self.track_id}:{self.id} updating frame {frame_num} with points {pt} {label} {score}")
@@ -131,32 +135,16 @@ class Trace:
         self.box[frame_num] = box
         self.score[frame_num] = score
 
-        # Reduce the impact of the early detections by only considering the last 20 frames
         scores = np.array(list(self.score.values()))
         labels = list(self.label.values())
-        if len(scores) > 30:
-            scores = scores[-30:]
-            labels = labels[-30:]
 
-        # Calculate the weighted score for each label
-        label_scores = defaultdict(float)
-        for score, label in zip(scores, labels):
-            label_scores[label] += float(score)
-
-        label_counts = Counter(labels)
-
-        # Normalize the scores by the number of occurrences of each label
-        normalized_label_scores = {label: label_scores[label] / label_counts[label] for label in label_scores}
-
-        # Sort the labels by normalized scores
-        sorted_normalized_labels = sorted(normalized_label_scores.items(), key=lambda x: x[1], reverse=True)
-
-        # Extract the top-1 and top-2 labels
-        top_1_label, top_1_score = sorted_normalized_labels[0]
-        if len(sorted_normalized_labels) > 1:  # Check if there's a second label
-            top_2_label, top_2_score = sorted_normalized_labels[1]
+        # Sort the labels by the maximum score and get the top-1 and top-2 labels
+        sorted_labels = sorted(zip(labels, scores), key=lambda x: x[1], reverse=True)
+        (top_1_label, top_1_score) = sorted_labels[0]
+        if len(sorted_labels) > 1:
+            (top_2_label, top_2_score) = sorted_labels[1]
         else:
-            top_2_label, top_2_score = "marine organism", 0.  # Handle case with only one label
+            top_2_label, top_2_score = "marine organism", 0.
 
         self.winning_labels = [top_1_label, top_2_label]
         self.winning_scores = [top_1_score, top_2_score]
