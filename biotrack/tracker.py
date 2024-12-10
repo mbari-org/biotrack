@@ -42,11 +42,12 @@ class BioTracker:
         # Initialize the model for computing crop embeddings
         self.vit_wrapper = ViTWrapper(DEFAULT_DEVICE, device_id)
 
-    def update_trackers_queries(self, frame_num: int, keypoints: np.array, labels: List[str], scores: np.array, boxes: np.array,  d_emb: np.array, **kwargs):
+    def update_trackers_queries(self, frame_num: int, keypoints: np.array, labels: List[str], scores: np.array, coverages: np.array, boxes: np.array,  d_emb: np.array, **kwargs):
         """
         Update the tracker with the queries. This will seed new tracks if they cannot be associated with existing tracks
         :param boxes:  the bounding boxes of the queries in the format [[x1,y1,x2,y2],[x1,y1,x2,y2]...] in the normalized scale 0-1
         :param scores:  the scores of the queries in the format [score1, score2, score3...] in the normalized scale 0-1
+        :param coverages:  the coverage of the gradcam queries in the format [coverage1, coverage2, coverage3...] in the normalized scale 0-1
         :param labels:  the labels of the queries in the format [label1, label2, label3...]
         :param frame_num:  the starting frame number of the batch
         :param keypoints:  points in the format [[[x1,y1],[x2,y2],[[x1,y1],[x2,y2],[x3,y3...], [x1,y1],[x2,y2],[[x1,y1],[x2,y2],[x3,y3...], one per track in the normalized scale 0-1
@@ -67,10 +68,10 @@ class BioTracker:
                 self.next_track_id += 1
 
             # Get the newly created tracks and initialize
-            for j, data in enumerate(zip(new_tracks, keypoints, d_emb, boxes, labels, scores)):
-                new_tracks[j], points, emb, box, label, score = data
+            for j, data in enumerate(zip(new_tracks, keypoints, d_emb, boxes, labels, scores, coverages)):
+                new_tracks[j], points, emb, box, label, score, coverage = data
                 for i, pt in enumerate(points[0]):
-                    new_tracks[j].init(i, label, pt, emb, frame_num, box=box, score=score)
+                    new_tracks[j].init(i, label, pt, emb, frame_num, box=box, score=score, coverage=coverage)
 
             self.open_trackers.extend(new_tracks)
             return
@@ -107,7 +108,8 @@ class BioTracker:
                 box = boxes[d_idx // Track.NUM_KP]
                 label = labels[d_idx // Track.NUM_KP]
                 score = scores[d_idx // Track.NUM_KP]
-                track.init(j, label, keypoints[d_idx], d_emb[d_idx // Track.NUM_KP], frame_num, box=box, score=score)
+                coverage = coverages[d_idx // Track.NUM_KP]
+                track.init(j, label, keypoints[d_idx], d_emb[d_idx // Track.NUM_KP], frame_num, box=box, score=score, coverage=coverage)
             self.open_trackers.append(track)
             self.next_track_id += 1
 
@@ -228,7 +230,7 @@ class BioTracker:
         for i in unique_frames:
             boxes = [[d['x'],d['y'],d['xx'],d['xy']] for d in detections if d["frame"] == i]
             images = [d['crop_path'] for d in detections if d["frame"] == i]
-            embeddings, predicted_classes, predicted_scores, keypoints = self.vit_wrapper.process_images(images)
+            embeddings, predicted_classes, predicted_scores, keypoints, coverages = self.vit_wrapper.process_images(images)
             # Remove any data that has no keypoints
             # Get the index of the keypoints that are empty
             empty_idx = [i for i, kpts in enumerate(keypoints) if len(kpts) == 0]
@@ -246,7 +248,7 @@ class BioTracker:
             predicted_classes = [p[0] for p in predicted_classes]
             predicted_scores = [p[0] for p in predicted_scores]
             info(f"Adding query for {correct_kpts} in frame idx {i}")
-            det_query[i].append([correct_kpts, predicted_classes, predicted_scores, boxes, embeddings])
+            det_query[i].append([correct_kpts, predicted_classes, predicted_scores, coverages, boxes, embeddings])
             image_query[i].append(images)
 
         return self._update_batch(frame_range, frames, det_query, image_query, **kwargs)
@@ -277,7 +279,7 @@ class BioTracker:
         frame_numbers = det_query.keys()
         for f in frame_numbers:
             queries_in_frame = [d[0] for d in det_query[f]][0]
-            embeddings_in_frame = [d[4] for d in det_query[f]]
+            embeddings_in_frame = [d[5] for d in det_query[f]]
             for kpts in queries_in_frame[0]:
                 for kpt in kpts:
                     queries.append([int(f - frame_range[0]), kpt[0], kpt[1]])
@@ -298,9 +300,10 @@ class BioTracker:
             queries_in_frame = [d[0] for d in det_query[f]]
             labels_in_frame = [d[1] for d in det_query[f]] # Get the top label and score
             scores_in_frame = [d[2] for d in det_query[f]]
-            boxes_in_frame = [d[3] for d in det_query[f]]
+            coverages_in_frame = [d[3] for d in det_query[f]]
+            boxes_in_frame = [d[4] for d in det_query[f]]
             debug(f"Updating with queries {queries_in_frame} in frame {f}")
-            self.update_trackers_queries(f, queries_in_frame[0], labels_in_frame[0], scores_in_frame[0], boxes_in_frame[0], q_emb[f], **kwargs)
+            self.update_trackers_queries(f, queries_in_frame[0], labels_in_frame[0], scores_in_frame[0], coverages_in_frame[0], boxes_in_frame[0], q_emb[f], **kwargs)
             self.check(f)
             # Set the points that may be visible in all the frames from the current frame to the end of the frame range
             for ii in range(f, frame_range[1]):

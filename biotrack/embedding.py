@@ -72,14 +72,16 @@ class ViTWrapper:
         top_classes = top_classes.cpu().numpy()
         top_scores = F.softmax(top_scores, dim=-1).cpu().numpy()
 
+        coverages = []
         keypoints = []
         for i, image_path in enumerate(image_paths):
-            best_coverage = 0
-            best_class = -1
+            best_coverage = 0.
+            best_label = -1
+            best_score = 0.
             best_keypoints = []
             for j, data in enumerate(zip(top_classes[i], top_scores[i])):
-                top_class, top_score = data
-                category_name = self.model.config.id2label[top_class]
+                label, score = data
+                category_name = self.model.config.id2label[label]
                 image = Image.open(image_path)
                 input_tensor = transforms.ToTensor()(image)
                 kp, coverage = get_gcam_keypoints(model=self.model,
@@ -89,13 +91,14 @@ class ViTWrapper:
                                         targets_for_gradcam=[ClassifierOutputTarget(self.category_name_to_index(category_name))],
                                         reshape_transform=reshape_transform)
                 if coverage > best_coverage and coverage > min_coverage:
-                    if best_class == -1:
-                        best_class = top_class
-                    top_classes[i][0] = top_class # Update the top 2 classes and scores
-                    top_scores[i][0] = coverage
-                    top_classes[i][1] = best_class
-                    top_scores[i][1] = best_coverage
-                    best_class = top_class
+                    if best_label == -1:
+                        best_label = label
+                    top_classes[i][0] = label # Update the top 2 classes and scores
+                    top_scores[i][0] = score
+                    top_classes[i][1] = best_label
+                    top_scores[i][1] = best_score
+                    best_label = label
+                    best_score = score
                     best_coverage = coverage
                     best_keypoints = kp
                     debug(f"Found best keypoints: {best_keypoints} for {category_name} with coverage {best_coverage} for {image_path}")
@@ -103,6 +106,7 @@ class ViTWrapper:
                         break
 
             keypoints.append(best_keypoints)
+            coverages.append(best_coverage)
 
             if len(best_keypoints) == 0:
                 err(f"No keypoints found for {image_path}")
@@ -115,7 +119,7 @@ class ViTWrapper:
         predicted_classes = [[self.model.config.id2label[class_idx] for class_idx in class_list] for class_list in top_classes]
         predicted_scores = [[score for score in score_list] for score_list in top_scores]
 
-        return batch_embeddings, predicted_classes, predicted_scores, keypoints
+        return batch_embeddings, predicted_classes, predicted_scores, keypoints, coverages
 
 
 def get_gcam_keypoints(model: torch.nn.Module,

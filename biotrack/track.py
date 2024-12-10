@@ -171,12 +171,12 @@ class Track:
                 predictions.append(pt)
         return np.array(predictions)
 
-    def init(self, trace_id:int, label: str, pt: np.array, emb: np.array, frame_num: int, box:np.array = None, score:float = None) -> None:
+    def init(self, trace_id:int, label: str, pt: np.array, emb: np.array, frame_num: int, box:np.array = None, score:float = None, coverage:float=0.) -> None:
         if self.is_closed():
             info(f"{self.id} is closed")
             return
 
-        self.traces[trace_id].update_pt_box(label, pt, frame_num, box, score)
+        self.traces[trace_id].update_pt_box(label, pt, frame_num, box, score, coverage)
 
         # Require an embedding to update_pt_box the tracker
         assert len(emb) > 0, "Embedding is required to initialize a tracker"

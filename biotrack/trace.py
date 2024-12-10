@@ -16,6 +16,7 @@ class Trace:
         self.label = {}
         self.score = {}
         self.box = {}
+        self.coverage = {}
         self.closed = False
         self.winning_labels = ["marine organism", "marine organism"]
         self.winning_scores = [0., 0.]
@@ -105,8 +106,8 @@ class Trace:
         return 0
 
     def dump(self):
-        pts_pretty = [f"{pt[0]:.2f},{pt[1]:.2f},{label},{score}" for pt, label, score in
-                      zip(self.pt.values(), self.label.values(), self.score.values())]
+        pts_pretty = [f"{pt[0]:.2f},{pt[1]:.2f},{label},{score:.2f},{coverage:.2f}" for pt, label, score, coverage in
+                      zip(self.pt.values(), self.label.values(), self.score.values(), self.coverage.values())]
         info(f"{self.track_id}:{self.trace_id} start_frame {self.start_frame} last_update_frame {self.last_update_frame} {pts_pretty}")
 
     def get_frames(self):
@@ -125,31 +126,42 @@ class Trace:
         self.label[frame_num] = "marine organism"
 
     def update_pt_box(self, label: str, pt: np.array, frame_num: int, box: np.array = None,
-                      score: float = 0.) -> None:
+                      score: float = 0., coverage: float = 0.) -> None:
         if self.is_closed() or frame_num < self.last_update_frame:
             return
 
-        info(f"{self.track_id}:{self.id} updating frame {frame_num} with points {pt} {label} {score}")
+        info(f"{self.track_id}:{self.id} updating frame {frame_num} with points {pt} {label} {score:.2f} {coverage:.2f}")
         self.pt[frame_num] = pt
         self.label[frame_num] = label
         self.box[frame_num] = box
         self.score[frame_num] = score
+        self.coverage[frame_num] = coverage
 
-        scores = np.array(list(self.score.values()))
+        coverages = np.array(list(self.coverage.values()))
         labels = list(self.label.values())
+        scores = np.array(list(self.score.values()))
 
-        # Sort the labels by the maximum score and get the top-1 and top-2 labels
-        sorted_labels = sorted(zip(labels, scores), key=lambda x: x[1], reverse=True)
-        (top_1_label, top_1_score) = sorted_labels[0]
+        # Sort the labels by the maximum coverages and get the top-1 and top-2 labels
+        sorted_labels = sorted(zip(labels, coverages), key=lambda x: x[1], reverse=True)
+        (top_1_label, top_1_coverage) = sorted_labels[0]
         if len(sorted_labels) > 1:
-            (top_2_label, top_2_score) = sorted_labels[1]
+            (top_2_label, top_2_coverage) = sorted_labels[1]
         else:
-            top_2_label, top_2_score = "marine organism", 0.
+            top_2_label, top_2_coverage = "marine organism", 0.
 
+        # Get the top-1 and top-2 scores for the top-1 and top-2 labels
+        # Get the index where the label is the top-1 label and the coverage is the top-1 coverage
+        top_1_index = [i for i, (l, c) in enumerate(zip(labels, coverages)) if l == top_1_label and c == top_1_coverage]
+        top_1_score = scores[top_1_index[0]]
+        if len(sorted_labels) > 1:
+            top_2_index = [i for i, (l, c) in enumerate(zip(labels, coverages)) if l == top_2_label and c == top_2_coverage]
+            top_2_score = scores[top_2_index[0]]
+        else:
+            top_2_score = 0.
         self.winning_labels = [top_1_label, top_2_label]
         self.winning_scores = [top_1_score, top_2_score]
-        pts_pretty = [f"{pt[0]:.2f},{pt[1]:.2f},{label},{score}" for pt, label, score in
-                      zip(self.pt.values(), self.label.values(), self.score.values())]
+        pts_pretty = [f"{pt[0]:.2f},{pt[1]:.2f},{label},{score:.2f},{coverage:.2f}" for pt, label, score, coverage in
+                      zip(self.pt.values(), self.label.values(), self.score.values(), self.coverage.values())]
         total_frames = len(self.pt)
         start_frame = list(self.pt)[0]
         info(f"Updating tracker {self.id} total_frames {total_frames} updated start {start_frame} to {frame_num} {pts_pretty} with label {self.winning_labels[0]}, score {self.winning_scores[0]}")
