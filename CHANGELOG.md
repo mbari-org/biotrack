@@ -1,6 +1,15 @@
 # CHANGELOG
 
 
+## v0.7.0 (2024-12-10)
+
+### Features
+
+- Added support for model config through model_name kwargs to BioTracker constructor and some other
+  minor refactoring for clarity
+  ([`0473a76`](https://github.com/mbari-org/biotrack/commit/0473a7689bae3f7555d7b8de12222d162feda9c8))
+
+
 ## v0.6.1 (2024-12-10)
 
 ### Bug Fixes
