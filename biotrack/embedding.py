@@ -13,7 +13,6 @@ from pytorch_grad_cam import GradCAM
 from pytorch_grad_cam.utils.model_targets import ClassifierOutputTarget
 
 from biotrack.batch_utils import percent_coverage, reshape_transform
-from biotrack.delme import HuggingfaceToTensorModelWrapper
 from biotrack.logger import info, err, debug
 from biotrack.track import Track
 
