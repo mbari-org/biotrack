@@ -1,6 +1,19 @@
 # CHANGELOG
 
 
+## v0.7.1 (2024-12-10)
+
+### Bug Fixes
+
+- Removed unused import
+  ([`42cfd73`](https://github.com/mbari-org/biotrack/commit/42cfd733c68a00a7df6e645a01ef73d50f4f8b56))
+
+### Build System
+
+- Updated poetry
+  ([`3bfcb34`](https://github.com/mbari-org/biotrack/commit/3bfcb343154a45475403efc187fcf9338827652b))
+
+
 ## v0.7.0 (2024-12-10)
 
 ### Features
