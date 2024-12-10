@@ -31,7 +31,7 @@ class ViTWrapper:
     DEFAULT_MODEL_NAME = "/Users/dcline/Dropbox/code/biotrack/models/m3midwater-vit-b-16/"
 
 
-    def __init__(self, device: str = "cpu", batch_size: int = 32, model_name: str = DEFAULT_MODEL_NAME, device_id: int = 0):
+    def __init__(self, batch_size: int = 32, model_name: str = DEFAULT_MODEL_NAME, device_id: int = 0):
         self.batch_size = batch_size
         self.name = model_name
         self.model = AutoModelForImageClassification.from_pretrained(model_name)

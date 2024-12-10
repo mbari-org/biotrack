@@ -20,7 +20,7 @@ DEFAULT_DEVICE = "cuda" if torch.cuda.is_available() else "mps" if torch.backend
 
 
 class BioTracker:
-    def __init__(self, image_width: int, image_height: int, device_id: int = 0):
+    def __init__(self, image_width: int, image_height: int, device_id: int = 0, **kwargs):
         self.logger = create_logger_file()
         self.image_width = image_width
         self.image_height = image_height
@@ -32,15 +32,16 @@ class BioTracker:
         self.closed_trackers: List[Track] = []
         self.next_track_id = 0  # Unique ID for new tracks
         model = torch.hub.load("facebookresearch/co-tracker", "cotracker3_online")
-        self.offline_model = CoTrackerPredictor(checkpoint=None)
-        self.offline_model.model = model.model
-        self.offline_model.step = model.model.window_len // 2
+        self.track_model = CoTrackerPredictor(checkpoint=None)
+        self.track_model.model = model.model
+        self.track_model.step = model.model.window_len // 2
 
         self.device = torch.device(f"cuda:{device_id}" if torch.cuda.is_available() else "cpu")
-        self.offline_model.model.to(self.device)
+        self.track_model.model.to(self.device)
 
         # Initialize the model for computing crop embeddings
-        self.vit_wrapper = ViTWrapper(DEFAULT_DEVICE, device_id)
+        model_name = kwargs.get("model_name", ViTWrapper.DEFAULT_MODEL_NAME)
+        self.vit_wrapper = ViTWrapper(DEFAULT_DEVICE, device_id=device_id, model_name=model_name)
 
     def update_trackers_queries(self, frame_num: int, keypoints: np.array, labels: List[str], scores: np.array, coverages: np.array, boxes: np.array,  d_emb: np.array, **kwargs):
         """
@@ -329,7 +330,7 @@ class BioTracker:
 
         video_chunk = frames.unsqueeze(0)  # Shape: (B, T, C, H, W)
         info(f"Running co-tracker model with {len(queries)} queries frames {frame_range}")
-        pred_tracks, pred_vis = self.offline_model(video_chunk, queries=queries_t[None], backward_tracking=True)
+        pred_tracks, pred_vis = self.track_model(video_chunk, queries=queries_t[None], backward_tracking=True)
 
         # Get the final visibility mask by combining the query visibility and the model visibility
         query_vis = torch.tensor(query_vis, dtype=torch.bool).to(self.device)
