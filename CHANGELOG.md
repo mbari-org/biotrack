@@ -1,6 +1,14 @@
 # CHANGELOG
 
 
+## v0.6.1 (2024-12-10)
+
+### Bug Fixes
+
+- Swap the score and coverage to display/save the score not coverage
+  ([`06b9a5d`](https://github.com/mbari-org/biotrack/commit/06b9a5d3512d9f48c3189964131ee35d345f04b6))
+
+
 ## v0.6.0 (2024-12-09)
 
 ### Chores
