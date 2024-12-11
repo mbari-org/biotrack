@@ -1,6 +1,14 @@
 # CHANGELOG
 
 
+## v0.7.2 (2024-12-11)
+
+### Bug Fixes
+
+- Default to keypoint only (no embedding) cost and fix query visibility matrix
+  ([`5eab5fc`](https://github.com/mbari-org/biotrack/commit/5eab5fc0af63dca520c0901ebee3d290af030b4e))
+
+
 ## v0.7.1 (2024-12-10)
 
 ### Bug Fixes
