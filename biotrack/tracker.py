@@ -81,8 +81,8 @@ class BioTracker:
 
         # Flatten the keypoints and associate the new points with the existing track traces
         keypoints = np.array([item for sublist in keypoints for item in sublist[0]])
-        # assignment, costs = associate_trace_pts(detection_pts=keypoints, trace_pts=t_pts)
-        assignment, costs = associate_track_pts_emb(detection_pts=keypoints, detection_emb=d_emb, trace_pts=t_pts, tracker_emb=t_emb)
+        assignment, costs = associate_trace_pts(detection_pts=keypoints, trace_pts=t_pts)
+        # assignment, costs = associate_track_pts_emb(detection_pts=keypoints, detection_emb=d_emb, trace_pts=t_pts, tracker_emb=t_emb)
         if len(assignment) == 0:
             return
 
@@ -237,6 +237,7 @@ class BioTracker:
             empty_idx = [i for i, kpts in enumerate(keypoints) if len(kpts) == 0]
             if len(empty_idx) > 0:
                 info(f"Removing empty keypoints {empty_idx}")
+            keypoints = [kpts for i, kpts in enumerate(keypoints) if i not in empty_idx]
             embeddings = [emb for i, emb in enumerate(embeddings) if i not in empty_idx]
             predicted_classes = [p for i, p in enumerate(predicted_classes) if i not in empty_idx]
             predicted_scores = [p for i, p in enumerate(predicted_scores) if i not in empty_idx]
@@ -311,8 +312,11 @@ class BioTracker:
                 if ii < f:
                     continue
                 for j in range(0, len(labels_in_frame[0]*Track.NUM_KP)):
-                    query_vis[ii][vis_idx + j] = True
+                    idx = min(vis_idx + j, len(queries)-1)
+                    query_vis[ii - frame_range[0]][idx] = True
             vis_idx += len(labels_in_frame[0]*Track.NUM_KP)
+
+        return self.open_trackers + self.closed_trackers
 
         # Put the queries and frames into tensors and run the model with the backward tracking option which is
         # more accurate than the forward/online only tracking

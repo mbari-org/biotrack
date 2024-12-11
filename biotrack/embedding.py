@@ -100,9 +100,7 @@ class ViTWrapper:
                     best_score = score
                     best_coverage = coverage
                     best_keypoints = kp
-                    debug(f"Found best keypoints: {best_keypoints} for {category_name} with coverage {best_coverage} for {image_path}")
-                    if best_coverage > 20:
-                        break
+                    debug(f"Found best keypoints: {best_keypoints} for {category_name} with coverage {best_coverage} score {score} for {image_path}")
 
             keypoints.append(best_keypoints)
             coverages.append(best_coverage)
@@ -145,7 +143,7 @@ def get_gcam_keypoints(model: torch.nn.Module,
         input_tensor = np.transpose(input_tensor, (1, 2, 0))
         img_color = np.uint8(input_tensor * 255)
         img_color = cv2.cvtColor(img_color, cv2.COLOR_BGR2GRAY)
-        _, img_thres = cv2.threshold(img_color, 180, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+        _, img_thres = cv2.threshold(img_color, 150, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
         contours_raw, _ = cv2.findContours(img_thres, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
         if display:
