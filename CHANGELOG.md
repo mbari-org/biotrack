@@ -1,6 +1,14 @@
 # CHANGELOG
 
 
+## v0.7.4 (2024-12-12)
+
+### Bug Fixes
+
+- Correct trace to label assignment
+  ([`3e654d8`](https://github.com/mbari-org/biotrack/commit/3e654d88501f0c710912b7414339c8860d45dccd))
+
+
 ## v0.7.3 (2024-12-12)
 
 ### Build System
