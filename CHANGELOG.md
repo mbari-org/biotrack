@@ -1,6 +1,25 @@
 # CHANGELOG
 
 
+## v0.7.3 (2024-12-12)
+
+### Build System
+
+- Better build for cuda deploy
+  ([`47f93ca`](https://github.com/mbari-org/biotrack/commit/47f93ca79fa388819767eccb7aa031ac6ccf1782))
+
+### Chores
+
+- Minor change in example for clarity
+  ([`f66145e`](https://github.com/mbari-org/biotrack/commit/f66145e6100bdbe767144dbd3b8916827c4d823e))
+
+### Performance Improvements
+
+- Improved keypoint assignment, remove IOU tracks, and save the second prediction from the gcam but
+  keep the model prediction
+  ([`6b586c3`](https://github.com/mbari-org/biotrack/commit/6b586c330e3b14fac5959a3fe1c612ead1cdf63a))
+
+
 ## v0.7.2 (2024-12-11)
 
 ### Bug Fixes
