@@ -35,11 +35,10 @@ def associate(detection_pts, detection_emb, tracker_pts, tracker_emb, alpha: flo
     return D_combined
 
 
-def associate_track_pts_emb(detection_pts, detection_emb, trace_pts, tracker_emb, w_similarity: float = 0.9,
+def associate_track_pts_emb(detection_pts, detection_emb, trace_pts, tracker_emb, w_similarity: float = 0.5,
                             w_keypoints=0.1) -> np.ndarray:
 
     try:
-        num_key_points = len(trace_pts)
         num_det_pts = len(detection_pts)
 
         similarity_matrix = cosine_similarity(tracker_emb, detection_emb)
@@ -47,15 +46,9 @@ def associate_track_pts_emb(detection_pts, detection_emb, trace_pts, tracker_emb
 
         cost_keypoints = cdist(trace_pts, detection_pts, metric="euclidean")
 
-        combined_cost_matrix = w_similarity * cost_similarity + w_keypoints * cost_keypoints
-
-        # Pad matrix for dummy assignments (if needed)
-        if num_key_points > num_det_pts:
-            padding = np.full((num_key_points, num_key_points - num_det_pts), 1e6)
-            combined_cost_matrix = np.hstack((combined_cost_matrix, padding))
-        elif num_det_pts > num_key_points:
-            padding = np.full((num_det_pts - num_key_points, num_det_pts), 1e6)
-            combined_cost_matrix = np.vstack((combined_cost_matrix, padding))
+        cost_similarity_expanded = np.repeat(cost_similarity, cost_keypoints.shape[1] // cost_similarity.shape[1],
+                                             axis=1)
+        combined_cost_matrix = w_similarity * cost_similarity_expanded + w_keypoints * cost_keypoints
 
         # Compute optimal assignment using Hungarian algorithm
         row_ind, col_ind = linear_sum_assignment(combined_cost_matrix)
@@ -69,7 +62,7 @@ def associate_track_pts_emb(detection_pts, detection_emb, trace_pts, tracker_emb
         return assignments, combined_cost_matrix
     except Exception as e:
         err(f"Error in associate_track_pts_emb: {e}")
-        return [], []
+        raise e
 
 
 def associate_trace_pts(detection_pts, trace_pts) -> np.ndarray:
