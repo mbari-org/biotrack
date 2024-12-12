@@ -1,9 +1,15 @@
 # CHANGELOG
 
 
+## v0.7.5 (2024-12-12)
+
+
 ## v0.7.4 (2024-12-12)
 
 ### Bug Fixes
+
+- Correct handling of different size cost association arrays
+  ([`dd61fdd`](https://github.com/mbari-org/biotrack/commit/dd61fddb269845cfd4be1cc6ac0c7b1434b0d371))
 
 - Correct trace to label assignment
   ([`3e654d8`](https://github.com/mbari-org/biotrack/commit/3e654d88501f0c710912b7414339c8860d45dccd))
