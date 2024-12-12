@@ -82,8 +82,8 @@ class BioTracker:
 
         # Flatten the keypoints and associate the new points with the existing track traces
         keypoints = np.array([item for sublist in keypoints for item in sublist[0]])
-        assignment, costs = associate_trace_pts(detection_pts=keypoints, trace_pts=t_pts)
-        # assignment, costs = associate_track_pts_emb(detection_pts=keypoints, detection_emb=d_emb, trace_pts=t_pts, tracker_emb=t_emb)
+        # assignment, costs = associate_trace_pts(detection_pts=keypoints, trace_pts=t_pts)
+        assignment, costs = associate_track_pts_emb(detection_pts=keypoints, detection_emb=d_emb, trace_pts=t_pts, tracker_emb=t_emb)
         if len(assignment) == 0:
             return
 
@@ -109,13 +109,14 @@ class BioTracker:
             info(f"Creating new track {self.next_track_id} at {frame_num}")
             track = Track(self.next_track_id, self.image_width, self.image_height, **kwargs)
             unassigned_idx = unassigned[i:i + Track.NUM_KP]
-            labels = labels[i // Track.NUM_KP]
-            scores = scores[i // Track.NUM_KP]
-            box = boxes[i // Track.NUM_KP]
-            coverage = coverages[i // Track.NUM_KP]
-            debug(f"Creating new track with {len(unassigned_idx)} points {unassigned_idx} labels {labels} scores {scores} box {box} coverage {coverage}")
+            labels_f = labels[i // Track.NUM_KP]
+            scores_f = scores[i // Track.NUM_KP]
+            box_f = boxes[i // Track.NUM_KP]
+            coverage_f = coverages[i // Track.NUM_KP]
+            emb_f = d_emb[i // Track.NUM_KP]
+            debug(f"Creating new track with {len(unassigned_idx)} points {unassigned_idx} labels {labels_f} scores {scores_f} box {box_f} coverage {coverage_f}")
             for j, d_idx in enumerate(unassigned_idx):
-                track.init(j, labels, keypoints[d_idx], d_emb[d_idx // Track.NUM_KP], frame_num, box=box, scores=scores, coverage=coverage)
+                track.init(j, labels_f, keypoints[d_idx], emb_f, frame_num, box=box_f, scores=scores_f, coverage=coverage_f)
             self.open_trackers.append(track)
             self.next_track_id += 1
 
