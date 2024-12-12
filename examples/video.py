@@ -61,9 +61,10 @@ if __name__ == "__main__":
             frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
             print(f"Displaying last_updated_frame {frame_num}")
             for track in tracks:
-                pt, label, box, score = track.get(frame_num, rescale=True)
+                pt, label, box, score = track.get(frame_num, rescale=False)
                 if pt is not None:
                     print(f"Drawing point {pt},{label} for track {track.id}")
+                    pt = (int(pt[0] * 1920), int(pt[1] * 1080))
                     center = (int(pt[0]) + 10, int(pt[1]))
                     radius = 10
                     color = (255, 255, 255)
@@ -76,7 +77,10 @@ if __name__ == "__main__":
 
                 if box is not None:
                     # Draw the box
-                    frame = cv2.rectangle(frame, (int(box[0]), int(box[1])), (int(box[2]), int(box[3])), (0, 255, 0), 1)
+                    frame = cv2.rectangle(frame,
+                                          (int(box[0] * 1920), int(box[1] * 1080)),
+                                          (int(box[2] * 1920), int(box[3] * 1080)),
+                                          (0, 255, 0), 1)
 
             if frame is not None:
                 cv2.imshow("Frame", frame)
