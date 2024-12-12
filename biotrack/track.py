@@ -8,7 +8,7 @@ import numpy as np
 
 
 class Track:
-    NUM_KP = 4 # Number of key points to track
+    NUM_KP = 3 # Number of key points to track
 
     def __init__(self, track_id: int, x_scale: float, y_scale: float, **kwargs):
         max_empty_frames = kwargs.get("max_empty_frames", 30)
@@ -124,8 +124,12 @@ class Track:
         return best_frame, best_pt, best_labels, best_box, best_scores
 
     def get(self, frame_num:int = -1, rescale=True) -> (int, np.array, str, np.array, float):
-        if frame_num == -1:
-            frame_num = list(self.pt.keys())[-3]
+        if frame_num == -1: # Get the last frame
+            longest_trace = self.traces[0]
+            for trace in self.traces:
+                if trace.num_frames > longest_trace.num_frames:
+                    longest_trace = trace
+            frame_num = longest_trace.last_update_frame
 
         pt = None
         for trace in self.traces:
@@ -171,14 +175,33 @@ class Track:
                 predictions.append(pt)
         return np.array(predictions)
 
-    def init(self, trace_id:int, label: str, pt: np.array, emb: np.array, frame_num: int, box:np.array = None, score:float = None, coverage:float=0.) -> None:
+    def init(self, trace_id:int, labels: [str], pt: np.array, emb: np.array, frame_num: int, box:np.array = None, scores:float = [0.,0.], coverage:float= 0) -> None:
         if self.is_closed():
             info(f"{self.id} is closed")
             return
 
-        self.traces[trace_id].update_pt_box(label, pt, frame_num, box, score, coverage)
+        self.traces[trace_id].update_pt_box(labels, pt, frame_num, box, scores, coverage)
 
         # Require an embedding to update_pt_box the tracker
         assert len(emb) > 0, "Embedding is required to initialize a tracker"
         self.emb = emb
         self.close_check(frame_num)
+
+    def intersection_over_union(self, t2):
+        # Get the intersection and union of the bounding boxes
+        box1 = self.get_best()[3]
+        box2 = t2.get_best()[3]
+        if box1 is None or box2 is None:
+            return 0.
+        intersection = 0
+        union = 0
+        x1 = max(box1[0], box2[0])
+        y1 = max(box1[1], box2[1])
+        x2 = min(box1[0] + box1[2], box2[0] + box2[2])
+        y2 = min(box1[1] + box1[3], box2[1] + box2[3])
+        if x1 < x2 and y1 < y2:
+            intersection = (x2 - x1) * (y2 - y1)
+            union = box1[2] * box1[3] + box2[2] * box2[3] - intersection
+        if union == 0:
+            return 0
+        return intersection / union

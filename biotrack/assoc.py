@@ -35,8 +35,8 @@ def associate(detection_pts, detection_emb, tracker_pts, tracker_emb, alpha: flo
     return D_combined
 
 
-def associate_track_pts_emb(detection_pts, detection_emb, trace_pts, tracker_emb, w_similarity: float = 0.5,
-                            w_keypoints=0.5) -> np.ndarray:
+def associate_track_pts_emb(detection_pts, detection_emb, trace_pts, tracker_emb, w_similarity: float = 0.9,
+                            w_keypoints=0.1) -> np.ndarray:
 
     try:
         num_key_points = len(trace_pts)
@@ -62,9 +62,9 @@ def associate_track_pts_emb(detection_pts, detection_emb, trace_pts, tracker_emb
         assignments = [(row, col) for row, col in zip(row_ind, col_ind) if col < num_det_pts]
 
         for t_idx, d_idx in assignments:
-            tracker_pts_pretty = ", ".join([f"{pt:.2f}" for pt in trace_pts[t_idx]])
-            detection_pts_pretty = ", ".join([f"{pt:.2f}" for pt in detection_pts[d_idx]])
-            info(f"Track point {t_idx} {tracker_pts_pretty}-> Detection point {d_idx} {detection_pts_pretty}with combined cost {combined_cost_matrix[t_idx, d_idx]:.2f}")
+            tracker_pts_str = ", ".join([f"{pt:.2f}" for pt in trace_pts[t_idx]])
+            detection_pts_str = ", ".join([f"{pt:.2f}" for pt in detection_pts[d_idx]])
+            info(f"Track point {t_idx} {tracker_pts_str}-> Detection point {d_idx} {detection_pts_str} with combined cost {combined_cost_matrix[t_idx, d_idx]:.2f}")
 
         return assignments, combined_cost_matrix
     except Exception as e:
