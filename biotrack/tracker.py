@@ -41,7 +41,7 @@ class BioTracker:
         self.track_model.model.to(self.device)
 
         # Initialize the model for computing crop embeddings
-        model_name = kwargs.get("model_name", ViTWrapper.DEFAULT_MODEL_NAME)
+        model_name = kwargs.get("vits_model", ViTWrapper.DEFAULT_MODEL_NAME)
         self.vit_wrapper = ViTWrapper(DEFAULT_DEVICE, device_id=device_id, model_name=model_name)
 
     def update_trackers_queries(self, frame_num: int, keypoints: np.array, labels: List[str], scores: np.array, coverages: np.array, boxes: np.array,  d_emb: np.array, **kwargs):
@@ -300,7 +300,11 @@ class BioTracker:
 
         if len(det_query) != len(crop_query):
             info(f"Number of det_query {len(det_query)} and crop paths {len(crop_query)} do not match")
-            return []
+            raise ValueError("Number of det_query and crop paths do not match")
+
+        if len(frames) == 0:
+            info(f"No frames found for {frame_range}")
+            raise ValueError("No frames found")
 
         # Compute the embeddings for the new query detection crops
         # Format the queries for the model, each query is [frame_number, x, y]
