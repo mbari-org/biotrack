@@ -1,6 +1,27 @@
 # CHANGELOG
 
 
+## v0.7.6 (2024-12-17)
+
+### Build System
+
+- Added missing transformer dep
+  ([`4300da1`](https://github.com/mbari-org/biotrack/commit/4300da1287ad55b25b37e69cf6d32fffbecce808))
+
+### Chores
+
+- Change device id to gpu id kwargs
+  ([`f743694`](https://github.com/mbari-org/biotrack/commit/f743694d072d7be46d3767e03c4a119adb169049))
+
+- Renamed model arg to vits_model
+  ([`0aa0c4b`](https://github.com/mbari-org/biotrack/commit/0aa0c4ba7ced52ae1a89d16f9195d19024d6488a))
+
+### Performance Improvements
+
+- Reduce to top 5 gcam for spped-up and slight mods of args for use in aipipeline
+  ([`09e9e42`](https://github.com/mbari-org/biotrack/commit/09e9e4222e6bf773f88a0aab601d938aa25a5354))
+
+
 ## v0.7.5 (2024-12-12)
 
 
