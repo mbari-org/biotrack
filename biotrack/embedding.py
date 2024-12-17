@@ -66,8 +66,8 @@ class ViTWrapper:
             outputs = self.model(inputs)
             logits = outputs.logits
 
-        # Get the top 10 classes and scores
-        top_scores, top_classes = torch.topk(logits, 10)
+        # Get the top 5 classes and scores
+        top_scores, top_classes = torch.topk(logits, 5)
         top_classes = top_classes.cpu().numpy()
         top_scores = F.softmax(top_scores, dim=-1).cpu().numpy()
 
