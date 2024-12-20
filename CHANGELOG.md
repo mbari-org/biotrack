@@ -1,6 +1,14 @@
 # CHANGELOG
 
 
+## v0.7.7 (2024-12-20)
+
+### Performance Improvements
+
+- Compute embedding in same block as model output to avoid forward compute twice
+  ([`86f0bd9`](https://github.com/mbari-org/biotrack/commit/86f0bd90e67772db1e664a63581f57a8eb7c7a9a))
+
+
 ## v0.7.6 (2024-12-17)
 
 ### Build System
