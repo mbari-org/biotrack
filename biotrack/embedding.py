@@ -16,7 +16,7 @@ from biotrack.batch_utils import percent_coverage, reshape_transform
 from biotrack.logger import info, err, debug
 from biotrack.track import Track
 
-from transformers import AutoModelForImageClassification, AutoImageProcessor
+from transformers import AutoConfig, AutoModelForImageClassification, AutoImageProcessor
 from torchvision import transforms
 import torch.nn.functional as F
 
@@ -33,7 +33,8 @@ class ViTWrapper:
     def __init__(self, batch_size: int = 32, model_name: str = DEFAULT_MODEL_NAME, device_id: int = 0):
         self.batch_size = batch_size
         self.name = model_name
-        self.model = AutoModelForImageClassification.from_pretrained(model_name)
+        config = AutoConfig.from_pretrained(model_name, output_hidden_states=True)
+        self.model = AutoModelForImageClassification.from_pretrained(model_name, config=config)
         self.processor = AutoImageProcessor.from_pretrained(model_name)
 
         if not Path(model_name).exists():
@@ -65,6 +66,8 @@ class ViTWrapper:
         with torch.no_grad():
             outputs = self.model(inputs)
             logits = outputs.logits
+            embeddings = outputs.hidden_states[-1]
+            batch_embeddings = embeddings[:, 0, :].cpu().numpy()
 
         # Get the top 5 classes and scores
         top_scores, top_classes = torch.topk(logits, 5)
@@ -108,10 +111,6 @@ class ViTWrapper:
             if len(best_keypoints) == 0:
                 err(f"No keypoints found for {image_path}")
                 continue
-
-        with torch.no_grad():
-            embeddings = self.model.base_model(inputs)
-            batch_embeddings = embeddings.last_hidden_state[:, 0, :].cpu().numpy()
 
         predicted_classes = [[self.model.config.id2label[class_idx] for class_idx in class_list] for class_list in top_classes]
         predicted_scores = [[score for score in score_list] for score_list in top_scores]
